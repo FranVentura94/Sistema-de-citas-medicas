@@ -1,1 +1,7 @@
-<Solution />
+<Solution>
+  <Folder Name="/MedicalAppointments.Api/" />
+  <Folder Name="/MedicalAppointments.Core/" />
+  <Folder Name="/MedicalAppointments.Domain/" />
+  <Folder Name="/MedicalAppointments.Infrastructure/" />
+  <Folder Name="/MedicalAppointments.Persistence/" />
+</Solution>
