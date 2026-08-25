@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Persistence.Context;
+﻿using Core.Features.Pacientes.Queries;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
@@ -8,17 +8,20 @@ namespace Api.Controllers;
 [Route("api/[controller]")]
 public class PacientesController : ControllerBase
 {
-    private readonly ClinicaDbContext _context;
+    private readonly IMediator _mediator;
 
-    public PacientesController(ClinicaDbContext context)
+    public PacientesController(IMediator mediator)
     {
-        _context = context;
+        _mediator = mediator;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetPacientes()
+    public async Task<IActionResult> GetPacientes(CancellationToken cancellationToken)
     {
-        var pacientes = await _context.Pacientes.ToListAsync();
+        var pacientes = await _mediator.Send(
+            new GetPacientesQuery(),
+            cancellationToken);
+
         return Ok(pacientes);
     }
 }
