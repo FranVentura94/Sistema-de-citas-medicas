@@ -19,10 +19,17 @@ public class ClinicaDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Mapeo explicito a tablas de SQL Server
+        // Mapeo explícito a tablas de SQL Server
         modelBuilder.Entity<Paciente>().ToTable("Pacientes", "dbo");
         modelBuilder.Entity<Medico>().ToTable("Medicos", "dbo");
         modelBuilder.Entity<Citas>().ToTable("Citas", "dbo");
         modelBuilder.Entity<Atenciones>().ToTable("Atenciones", "dbo");
+
+        // Claves primarias
+        modelBuilder.Entity<Citas>()
+            .HasKey(c => c.CitaID);
+
+        modelBuilder.Entity<Atenciones>()
+            .HasKey(a => a.AtencionID);
     }
 }
