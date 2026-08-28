@@ -20,4 +20,14 @@ public class PacienteRepository : IPacienteRepository
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<Paciente> AddAsync(
+        Paciente paciente,
+        CancellationToken cancellationToken)
+    {
+        await _context.Pacientes.AddAsync(paciente, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return paciente;
+    }
 }

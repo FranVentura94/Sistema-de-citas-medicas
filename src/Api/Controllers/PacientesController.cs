@@ -1,4 +1,6 @@
-﻿using Core.Features.Pacientes.Queries;
+﻿using Core.Features.Pacientes.Commands;
+using Core.Features.Pacientes.Queries;
+using Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,12 +18,25 @@ public class PacientesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetPacientes(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPacientes(
+        CancellationToken cancellationToken)
     {
         var pacientes = await _mediator.Send(
             new GetPacientesQuery(),
             cancellationToken);
 
         return Ok(pacientes);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreatePaciente(
+        CreatePacienteCommand command,
+        CancellationToken cancellationToken)
+    {
+        var paciente = await _mediator.Send(
+            command,
+            cancellationToken);
+
+        return Ok(paciente);
     }
 }
