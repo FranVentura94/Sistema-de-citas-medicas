@@ -1,31 +1,21 @@
-using Core.Features.Pacientes.Interfaces;
-using Core.Features.Pacientes.Queries;
-using MediatR;
+using Identity.Data;
 using Microsoft.EntityFrameworkCore;
-using Persistence.Context;
-using Persistence.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configurar conexión a SQL Server con ClinicaDbContext
-builder.Services.AddDbContext<ClinicaDbContext>(options =>
+// 1. Configurar la base de datos de Identidad (MS_IdentityDB)
+builder.Services.AddDbContext<IdentityDbContext>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Configuration.GetConnectionString("IdentityConnection")));
 
-// Registrar repositorio de pacientes
-builder.Services.AddScoped<IPacienteRepository, PacienteRepository>();
-
-// Registrar MediatR
-builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(GetPacientesQueryHandler).Assembly));
-
+// 2. Agregar controladores y documentación de Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Habilitar Swagger para visualizar y probar endpoints
+// 3. Middlewares de ejecución
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
