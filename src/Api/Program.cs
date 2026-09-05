@@ -1,21 +1,37 @@
+using Core.Features.Pacientes.Interfaces;
+using Domain.Interfaces;
 using Identity.Data;
 using Microsoft.EntityFrameworkCore;
+using Persistence.Context;
+using Persistence.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Configurar la base de datos de Identidad (MS_IdentityDB)
+// 1. Configurar las bases de datos (Identidad y Clínica)
 builder.Services.AddDbContext<IdentityDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("IdentityConnection")));
 
-// 2. Agregar controladores y documentación de Swagger
+builder.Services.AddDbContext<ClinicaDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("IdentityConnection")));
+
+// 2. Registrar MediatR (Para los Handler de CQRS)
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(typeof(Core.Features.Pacientes.Queries.GetPacientesQuery).Assembly));
+
+// 3. Registrar los Repositorios
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<IPacienteRepository, PacienteRepository>(); // Registra el repositorio específico de Pacientes
+
+// 4. Agregar controladores y Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// 3. Middlewares de ejecución
+// 5. Middlewares de ejecución
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
