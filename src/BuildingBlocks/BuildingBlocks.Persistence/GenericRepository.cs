@@ -48,4 +48,46 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task<PagedResult<T>> GetPagedAsync(
+    int pageNumber,
+    int pageSize,
+    Expression<Func<T, bool>>? filter = null,
+    Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+    bool asNoTracking = true,
+    CancellationToken cancellationToken = default,
+    params Expression<Func<T, object>>[] includes)
+    {
+        if (pageNumber < 1)
+            throw new ArgumentOutOfRangeException(nameof(pageNumber), "pageNumber debe ser 1 o mayor.");
+        if (pageSize < 1)
+            throw new ArgumentOutOfRangeException(nameof(pageSize), "pageSize debe ser 1 o mayor.");
+
+        IQueryable<T> query = asNoTracking ? _dbSet.AsNoTracking() : _dbSet;
+
+        foreach (var include in includes)
+        {
+            query = query.Include(include);
+        }
+
+        if (filter != null)
+            query = query.Where(filter);
+
+        int totalRecords = await query.CountAsync(cancellationToken);
+
+        if (orderBy != null)
+            query = orderBy(query);
+
+        query = query.Skip((pageNumber - 1) * pageSize).Take(pageSize);
+
+        var data = await query.ToListAsync(cancellationToken);
+
+        return new PagedResult<T>
+        {
+            Data = data,
+            TotalRecords = totalRecords,
+            PageSize = pageSize,
+            CurrentPage = pageNumber
+        };
+    }
 }

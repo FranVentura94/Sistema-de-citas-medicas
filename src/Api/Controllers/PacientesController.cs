@@ -51,4 +51,25 @@ public class PacientesController : ControllerBase
         var pacientes = await _pacienteRepo.GetAllAsync();
         return Ok(pacientes);
     }
+
+    // --- METODO NUEVO: PAGINACION GENERICA CON FILTRO DINAMICO ---
+    [HttpGet("paginado")]
+    public async Task<IActionResult> GetPacientesPaginado(
+        int pageNumber = 1,
+        int pageSize = 10,
+        string? filtro = null,
+        CancellationToken cancellationToken = default)
+    {
+        var filterExpression = string.IsNullOrWhiteSpace(filtro)
+            ? null
+            : Filter.FromStringExpression<Paciente>(filtro);
+
+        var resultado = await _pacienteRepo.GetPagedAsync(
+            pageNumber,
+            pageSize,
+            filter: filterExpression,
+            cancellationToken: cancellationToken);
+
+        return Ok(resultado);
+    }
 }
