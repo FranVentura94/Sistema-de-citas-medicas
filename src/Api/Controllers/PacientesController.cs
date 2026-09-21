@@ -1,7 +1,7 @@
 ﻿using Core.Features.Pacientes.Commands;
 using Core.Features.Pacientes.Queries;
 using Domain.Entities;
-using Domain.Interfaces; // IMPORTANTE: Agregamos esta referencia
+using BuildingBlocks.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

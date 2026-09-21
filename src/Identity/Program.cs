@@ -1,4 +1,4 @@
-using Domain.Interfaces;
+using BuildingBlocks.Persistence;
 using Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Context;
@@ -24,6 +24,9 @@ builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Registrar el repositorio genérico
+builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<ClinicaDbContext>());
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
 var app = builder.Build();

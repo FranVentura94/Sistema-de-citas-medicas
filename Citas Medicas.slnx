@@ -17,4 +17,7 @@
   <Folder Name="/src/">
     <Project Path="src/Identity/Identity.csproj" />
   </Folder>
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Persistence/BuildingBlocks.Persistence.csproj" />
+  </Folder>
 </Solution>

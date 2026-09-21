@@ -1,5 +1,5 @@
 using Core.Features.Pacientes.Interfaces;
-using Domain.Interfaces;
+using BuildingBlocks.Persistence;
 using Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Context;
@@ -21,6 +21,7 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(Core.Features.Pacientes.Queries.GetPacientesQuery).Assembly));
 
 // 3. Registrar los Repositorios
+builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<ClinicaDbContext>());
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IPacienteRepository, PacienteRepository>(); // Registra el repositorio específico de Pacientes
 
