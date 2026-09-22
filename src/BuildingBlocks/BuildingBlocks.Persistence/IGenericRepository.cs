@@ -8,6 +8,7 @@ public interface IGenericRepository<T> where T : class
     Task<T?> GetByIdAsync(int id);
     Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
     Task AddAsync(T entity);
+    Task AddRangeAsync(IEnumerable<T> entities);
     void Update(T entity);
     void Delete(T entity);
     Task SaveChangesAsync();
@@ -16,8 +17,14 @@ public interface IGenericRepository<T> where T : class
         int pageNumber,
         int pageSize,
         Expression<Func<T, bool>>? filter = null,
-        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+        string? orderBy = null,
         bool asNoTracking = true,
         CancellationToken cancellationToken = default,
         params Expression<Func<T, object>>[] includes);
+
+    Task<T?> GetOneByAsync(
+    Expression<Func<T, bool>> filter,
+    bool asNoTracking = true,
+    CancellationToken cancellationToken = default,
+    params Expression<Func<T, object>>[] includes);
 }

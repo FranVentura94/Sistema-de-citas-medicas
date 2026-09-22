@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Linq.Dynamic.Core;
 
 namespace BuildingBlocks.Persistence;
 
@@ -34,6 +35,11 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         await _dbSet.AddAsync(entity);
     }
 
+    public async Task AddRangeAsync(IEnumerable<T> entities)
+    {
+        await _dbSet.AddRangeAsync(entities);
+    }
+
     public void Update(T entity)
     {
         _dbSet.Update(entity);
@@ -53,7 +59,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     int pageNumber,
     int pageSize,
     Expression<Func<T, bool>>? filter = null,
-    Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+    string? orderBy = null,
     bool asNoTracking = true,
     CancellationToken cancellationToken = default,
     params Expression<Func<T, object>>[] includes)
@@ -75,8 +81,8 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
 
         int totalRecords = await query.CountAsync(cancellationToken);
 
-        if (orderBy != null)
-            query = orderBy(query);
+        if (!string.IsNullOrWhiteSpace(orderBy))
+            query = query.OrderBy(orderBy);
 
         query = query.Skip((pageNumber - 1) * pageSize).Take(pageSize);
 
@@ -89,5 +95,21 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
             PageSize = pageSize,
             CurrentPage = pageNumber
         };
+    }
+
+    public async Task<T?> GetOneByAsync(
+    Expression<Func<T, bool>> filter,
+    bool asNoTracking = true,
+    CancellationToken cancellationToken = default,
+    params Expression<Func<T, object>>[] includes)
+    {
+        IQueryable<T> query = asNoTracking ? _dbSet.AsNoTracking() : _dbSet;
+
+        foreach (var include in includes)
+        {
+            query = query.Include(include);
+        }
+
+        return await query.FirstOrDefaultAsync(filter, cancellationToken);
     }
 }

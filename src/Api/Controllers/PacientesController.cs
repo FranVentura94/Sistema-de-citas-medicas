@@ -52,12 +52,13 @@ public class PacientesController : ControllerBase
         return Ok(pacientes);
     }
 
-    // --- METODO NUEVO: PAGINACION GENERICA CON FILTRO DINAMICO ---
+    // --- METODO NUEVO: PAGINACION GENERICA CON FILTRO Y ORDEN DINAMICOS ---
     [HttpGet("paginado")]
     public async Task<IActionResult> GetPacientesPaginado(
         int pageNumber = 1,
         int pageSize = 10,
         string? filtro = null,
+        string? ordenarPor = null,
         CancellationToken cancellationToken = default)
     {
         var filterExpression = string.IsNullOrWhiteSpace(filtro)
@@ -68,8 +69,37 @@ public class PacientesController : ControllerBase
             pageNumber,
             pageSize,
             filter: filterExpression,
+            orderBy: ordenarPor,
             cancellationToken: cancellationToken);
 
         return Ok(resultado);
+    }
+
+    // --- METODO NUEVO: BUSQUEDA GENERICA DE UN SOLO REGISTRO ---
+    [HttpGet("uno")]
+    public async Task<IActionResult> GetPacienteUno(
+        string numeroDocumento,
+        CancellationToken cancellationToken)
+    {
+        var paciente = await _pacienteRepo.GetOneByAsync(
+            p => p.NumeroDocumento == numeroDocumento,
+            cancellationToken: cancellationToken);
+
+        if (paciente == null)
+            return NotFound();
+
+        return Ok(paciente);
+    }
+
+    // --- METODO NUEVO: GUARDADO GENERICO POR RANGO (LISTA) ---
+    [HttpPost("rango")]
+    public async Task<IActionResult> CrearPacientesEnRango(
+        List<Paciente> pacientes,
+        CancellationToken cancellationToken)
+    {
+        await _pacienteRepo.AddRangeAsync(pacientes);
+        await _pacienteRepo.SaveChangesAsync();
+
+        return Ok(pacientes);
     }
 }
