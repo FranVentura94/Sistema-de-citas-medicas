@@ -14,6 +14,9 @@
   <Folder Name="/E.MedicalAppointments.Api/">
     <Project Path="src/Api/Api.csproj" Id="ab8b4752-8cfd-4390-95e6-8295c3b31c4d" />
   </Folder>
+  <Folder Name="/F.MedicalAppointments.GenericPersistence/">
+    <Project Path="src/GenericPersistence/GenericPersistence.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Identity/Identity.csproj" />
   </Folder>

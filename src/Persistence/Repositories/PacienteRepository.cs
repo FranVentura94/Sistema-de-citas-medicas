@@ -1,33 +1,17 @@
-﻿using Core.Features.Pacientes.Interfaces;
+using Core.Features.Pacientes.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Persistence.Context;
 
 namespace Persistence.Repositories;
 
-public class PacienteRepository : IPacienteRepository
+/// <summary>
+/// Repositorio específico de Paciente. Hereda la implementación genérica de la
+/// biblioteca GenericPersistence, por lo que ya no repite la lógica CRUD.
+/// </summary>
+public class PacienteRepository
+    : GenericPersistence.Implementations.Repository<Paciente, long>, IPacienteRepository
 {
-    private readonly ClinicaDbContext _context;
-
-    public PacienteRepository(ClinicaDbContext context)
+    public PacienteRepository(DbContext context) : base(context)
     {
-        _context = context;
-    }
-
-    public async Task<List<Paciente>> GetAllAsync(CancellationToken cancellationToken)
-    {
-        return await _context.Pacientes
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<Paciente> AddAsync(
-        Paciente paciente,
-        CancellationToken cancellationToken)
-    {
-        await _context.Pacientes.AddAsync(paciente, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return paciente;
     }
 }
