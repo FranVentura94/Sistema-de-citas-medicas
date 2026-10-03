@@ -22,4 +22,5 @@
   </Folder>
   <Project Path="src/BuildingBlocks/BuildingBlocks.Rest.Tests/BuildingBlocks.Rest.Tests.csproj" Id="ad9924db-09d9-4e44-98dc-d666ec53ec47" />
   <Project Path="src/BuildingBlocks/BuildingBlocks.Rest/BuildingBlocks.Rest.csproj" Id="0a283681-40ef-4ff9-8cfd-0311707c2a57" />
+  <Project Path="src/Infrastructure.Tests/Infrastructure.Tests.csproj" Id="0e444e42-bcc9-4080-8c84-216a0e77de68" />
 </Solution>
