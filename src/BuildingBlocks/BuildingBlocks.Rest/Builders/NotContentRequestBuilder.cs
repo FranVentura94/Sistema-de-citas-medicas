@@ -3,11 +3,12 @@ using BuildingBlocks.Rest.Exceptions;
 using BuildingBlocks.Rest.Extensions;
 using BuildingBlocks.Rest.Interfaces.IFluents;
 using BuildingBlocks.Rest.Interfaces.IRequests;
-using Newtonsoft.Json;
+using BuildingBlocks.Rest.Serialization;
 using Serilog;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Text;
 
 namespace BuildingBlocks.Rest.Builders;
@@ -17,13 +18,15 @@ internal class NotContentRequestBuilder : INotContentRequest, IFluentAuth<IFluen
     private readonly HttpClient _client;
     private readonly HttpRequestMessage _request;
     private readonly RequestSettings _settings;
+    private readonly IJsonSerializer _serializer;
     private string _query = string.Empty;
 
-    public NotContentRequestBuilder(HttpClient client, HttpMethod method, RequestSettings settings)
+    public NotContentRequestBuilder(HttpClient client, HttpMethod method, RequestSettings settings, IJsonSerializer serializer)
     {
         _client = client;
         _request = new HttpRequestMessage { Method = method };
         _settings = settings;
+        _serializer = serializer;
     }
 
     public IFluentAuth<IFluentContent> WithBasic(string user, string password)
@@ -86,9 +89,9 @@ internal class NotContentRequestBuilder : INotContentRequest, IFluentAuth<IFluen
         var content = await HttpRequestExecutor.ReadContentAsStringAsync(response, _request);
         try
         {
-            return JsonConvert.DeserializeObject<T>(content)!;
+            return _serializer.Deserialize<T>(content);
         }
-        catch (JsonException ex)
+        catch (SerializationException ex)
         {
             throw HttpRequestExecutor.LogAndBuild(
                 $"Response from {_request.Method} {_request.RequestUri} could not be deserialized into {typeof(T).Name}: {ex.Message}",

@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using System.Text;
+﻿using System.Text;
+using BuildingBlocks.Rest.Serialization;
 
 namespace BuildingBlocks.Rest.Extensions;
 
@@ -16,9 +16,13 @@ public static class RequestExtensions
 
     public static void AddContent(this HttpRequestMessage request, object body)
     {
+        request.AddContent(body, new NewtonsoftJsonSerializer());
+    }
+
+    public static void AddContent(this HttpRequestMessage request, object body, IJsonSerializer serializer)
+    {
         if (body == null) return;
-        var jsonContent = JsonConvert.SerializeObject(body);
-        request.Content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+        request.Content = new StringContent(serializer.Serialize(body), Encoding.UTF8, "application/json");
     }
 
     public static void AddFormDataContent(this HttpRequestMessage request, MultipartFormDataContent content)
