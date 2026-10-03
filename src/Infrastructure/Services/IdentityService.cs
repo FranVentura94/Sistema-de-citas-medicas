@@ -55,7 +55,7 @@ internal class IdentityService : IIdentityService
             throw new DomainException(Errores.RECURSO_NO_ENCONTRADO,
                 "El recurso solicitado no existe en el servicio de Identity.", ex);
         }
-        catch (ApiException ex) when (ex.Reason is ApiFailureReason.Network or ApiFailureReason.Timeout)
+        catch (ApiException ex) when (ex.EsTransitoria())
         {
             throw new DomainException(Errores.SERVICIO_NO_DISPONIBLE,
                 "El servicio de Identity no está disponible. Intentá de nuevo más tarde.", ex);

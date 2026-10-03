@@ -112,4 +112,15 @@ public class IdentityServiceTests
         var cuerpo = await enviado.Content.ReadAsStringAsync();
         Assert.Contains("\"nombre\":\"Enfermería\"", cuerpo);
     }
+
+    [Fact]
+    public async Task GetRolesAsync_CuandoPollyRechazaPorTimeout_LanzaServicioNoDisponible()
+    {
+        var service = CreateService(new FakeHttpMessageHandler(
+            new Polly.Timeout.TimeoutRejectedException(TimeSpan.FromSeconds(10))));
+
+        var exception = await Assert.ThrowsAsync<DomainException>(() => service.GetRolesAsync());
+
+        Assert.Equal(Errores.SERVICIO_NO_DISPONIBLE, exception.Codigo);
+    }
 }

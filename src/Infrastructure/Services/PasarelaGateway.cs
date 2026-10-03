@@ -96,8 +96,7 @@ internal class PasarelaGateway : IPasarelaGateway
             .DeserializeWithAsync<CobroResponse>();
     }
 
-    private static bool EsReintentable(ApiException ex) =>
-        ex.Reason is ApiFailureReason.Timeout or ApiFailureReason.Network;
+    private static bool EsReintentable(ApiException ex) => ex.EsTransitoria();
 
     private static DomainException ConstruirRechazo(ApiException ex)
     {
