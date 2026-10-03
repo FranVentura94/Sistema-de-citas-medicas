@@ -17,6 +17,7 @@ internal class NotContentRequestBuilder : INotContentRequest, IFluentAuth<IFluen
     private readonly HttpClient _client;
     private readonly HttpRequestMessage _request;
     private readonly RequestSettings _settings;
+    private string _query = string.Empty;
 
     public NotContentRequestBuilder(HttpClient client, HttpMethod method, RequestSettings settings)
     {
@@ -45,7 +46,7 @@ internal class NotContentRequestBuilder : INotContentRequest, IFluentAuth<IFluen
 
     public IFluentContent WithUri([NotNull] string uri, string endpoint = "")
     {
-        _request.RequestUri = new Uri($"{uri}{endpoint ?? String.Empty}");
+        _request.RequestUri = new Uri($"{uri}{endpoint ?? String.Empty}{_query}");
         return this;
     }
 
@@ -55,26 +56,32 @@ internal class NotContentRequestBuilder : INotContentRequest, IFluentAuth<IFluen
         return this;
     }
 
-    public async Task<string> GetContentAsStringAsync()
+    public IFluentAuth<IFluentContent> WithQuery([NotNull] IDictionary<string, string> parametros)
+    {
+        _query = RequestExtensions.BuildQueryString(parametros);
+        return this;
+    }
+
+    public async Task<string> GetContentAsStringAsync(CancellationToken cancellationToken = default)
     {
         WriteRequestLog();
-        var response = await HttpRequestExecutor.SendAsync(_client, _request);
+        var response = await HttpRequestExecutor.SendAsync(_client, _request, cancellationToken);
         await HttpRequestExecutor.EnsureSuccessAsync(response, _request);
         return await HttpRequestExecutor.ReadContentAsStringAsync(response, _request);
     }
 
-    public async Task<byte[]> GetContentAsByteArrayAsync()
+    public async Task<byte[]> GetContentAsByteArrayAsync(CancellationToken cancellationToken = default)
     {
         WriteRequestLog();
-        var response = await HttpRequestExecutor.SendAsync(_client, _request);
+        var response = await HttpRequestExecutor.SendAsync(_client, _request, cancellationToken);
         await HttpRequestExecutor.EnsureSuccessAsync(response, _request);
         return await HttpRequestExecutor.ReadContentAsByteArrayAsync(response, _request);
     }
 
-    public async Task<T> DeserializeWithAsync<T>()
+    public async Task<T> DeserializeWithAsync<T>(CancellationToken cancellationToken = default)
     {
         WriteRequestLog();
-        var response = await HttpRequestExecutor.SendAsync(_client, _request);
+        var response = await HttpRequestExecutor.SendAsync(_client, _request, cancellationToken);
         await HttpRequestExecutor.EnsureSuccessAsync(response, _request);
         var content = await HttpRequestExecutor.ReadContentAsStringAsync(response, _request);
         try

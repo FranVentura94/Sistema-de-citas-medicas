@@ -93,4 +93,64 @@ public class RestBuilderGetTests
 
         Assert.Equal(expectedBytes, result);
     }
+
+    [Fact]
+    public async Task Get_WithQuery_AppendsEscapedQueryStringToTheUri()
+    {
+        HttpRequestMessage? captured = null;
+        var client = new HttpClient(new FakeHttpMessageHandler(req =>
+        {
+            captured = req;
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("ok") };
+        }));
+        var rest = CreateRestBuilder(client);
+
+        await rest.Get.WithoutAuth()
+            .WithQuery(new Dictionary<string, string> { ["sku"] = "A&B 1", ["cantidad"] = "3" })
+            .WithUri("https://api.example.com", "/inventario/disponibilidad")
+            .GetContentAsStringAsync();
+
+        Assert.Equal("https://api.example.com/inventario/disponibilidad?sku=A%26B%201&cantidad=3",
+            captured!.RequestUri!.AbsoluteUri);
+    }
+
+    [Fact]
+    public async Task Get_WithoutQuery_DoesNotAppendAnything()
+    {
+        HttpRequestMessage? captured = null;
+        var client = new HttpClient(new FakeHttpMessageHandler(req =>
+        {
+            captured = req;
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("ok") };
+        }));
+        var rest = CreateRestBuilder(client);
+
+        await rest.Get.WithoutAuth().WithUri("https://api.example.com", "/orders").GetContentAsStringAsync();
+
+        Assert.Equal("https://api.example.com/orders", captured!.RequestUri!.AbsoluteUri);
+    }
+
+    private sealed class WaitForCancellationHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+    }
+
+    [Fact]
+    public async Task Get_WhenTheTokenIsCancelled_ThrowsApiExceptionWithTimeoutReason()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.CancelAfter(TimeSpan.FromMilliseconds(50));
+        var rest = CreateRestBuilder(new HttpClient(new WaitForCancellationHandler()));
+
+        var exception = await Assert.ThrowsAsync<ApiException>(
+            () => rest.Get.WithoutAuth().WithUri("https://api.example.com", "/lento")
+                .GetContentAsStringAsync(cts.Token));
+
+        Assert.Equal(ApiFailureReason.Timeout, exception.Reason);
+    }
 }

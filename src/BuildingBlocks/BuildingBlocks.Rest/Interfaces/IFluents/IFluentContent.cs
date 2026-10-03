@@ -4,8 +4,8 @@ namespace BuildingBlocks.Rest.Interfaces.IFluents;
 
 public interface IFluentContent
 {
-    Task<string> GetContentAsStringAsync();
-    Task<byte[]> GetContentAsByteArrayAsync();
-    Task<T> DeserializeWithAsync<T>();
+    Task<string> GetContentAsStringAsync(CancellationToken cancellationToken = default);
+    Task<byte[]> GetContentAsByteArrayAsync(CancellationToken cancellationToken = default);
+    Task<T> DeserializeWithAsync<T>(CancellationToken cancellationToken = default);
     TaskAwaiter<HttpResponseMessage> GetAwaiter();
 }

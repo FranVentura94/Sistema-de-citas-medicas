@@ -32,4 +32,12 @@ public static class RequestExtensions
         if (data == null) return;
         request.Content = new FormUrlEncodedContent(data);
     }
+
+    public static string BuildQueryString(IDictionary<string, string>? parametros)
+    {
+        if (parametros == null || parametros.Count == 0) return string.Empty;
+
+        return "?" + string.Join("&", parametros.Select(p =>
+            $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}"));
+    }
 }

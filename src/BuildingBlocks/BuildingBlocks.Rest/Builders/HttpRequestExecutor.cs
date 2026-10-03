@@ -5,11 +5,12 @@ namespace BuildingBlocks.Rest.Builders;
 
 internal static class HttpRequestExecutor
 {
-    public static async Task<HttpResponseMessage> SendAsync(HttpClient client, HttpRequestMessage request)
+    public static async Task<HttpResponseMessage> SendAsync(
+    HttpClient client, HttpRequestMessage request, CancellationToken cancellationToken = default)
     {
         try
         {
-            return await client.SendAsync(request);
+            return await client.SendAsync(request, cancellationToken);
         }
         catch (HttpRequestException ex)
         {
