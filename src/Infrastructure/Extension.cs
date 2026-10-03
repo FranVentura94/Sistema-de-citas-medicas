@@ -20,6 +20,8 @@ public static class Extension
         });
 
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddSingleton<ITokenProvider, TokenProvider>();
+        services.AddScoped<IPasarelaGateway, PasarelaGateway>();
 
         return services;
     }

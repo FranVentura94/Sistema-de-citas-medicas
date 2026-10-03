@@ -22,7 +22,8 @@ public class ExceptionMiddleware
             context.Response.StatusCode = ex.Codigo switch
             {
                 Errores.RECURSO_NO_ENCONTRADO => StatusCodes.Status404NotFound,
-                Errores.SERVICIO_NO_DISPONIBLE => StatusCodes.Status503ServiceUnavailable,
+                Errores.SERVICIO_NO_DISPONIBLE or Errores.PASARELA_NO_DISPONIBLE => StatusCodes.Status503ServiceUnavailable,
+                Errores.COBRO_RECHAZADO => StatusCodes.Status422UnprocessableEntity,
                 _ => StatusCodes.Status502BadGateway
             };
 
