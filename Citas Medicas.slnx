@@ -23,4 +23,8 @@
   <Project Path="src/BuildingBlocks/BuildingBlocks.Rest.Tests/BuildingBlocks.Rest.Tests.csproj" Id="ad9924db-09d9-4e44-98dc-d666ec53ec47" />
   <Project Path="src/BuildingBlocks/BuildingBlocks.Rest/BuildingBlocks.Rest.csproj" Id="0a283681-40ef-4ff9-8cfd-0311707c2a57" />
   <Project Path="src/Infrastructure.Tests/Infrastructure.Tests.csproj" Id="0e444e42-bcc9-4080-8c84-216a0e77de68" />
+  <Project Path="src/Notificaciones/Notificaciones.Api/Notificaciones.Api.csproj" Id="37c102b9-b78f-4687-a732-f8ff64c18594" />
+  <Project Path="src/Notificaciones/Notificaciones.Core/Notificaciones.Core.csproj" Id="856cefca-8d46-4f16-af79-3ffce12784dc" />
+  <Project Path="src/Notificaciones/Notificaciones.Infrastructure/Notificaciones.Infrastructure.csproj" Id="ce1c11a7-8a7b-438e-8871-a311ecbedcf0" />
+  <Project Path="src/Notificaciones/Notificaciones.Tests/Notificaciones.Tests.csproj" Id="230fbabf-2b29-4ee2-b48a-a78ee5fcb4d2" />
 </Solution>
