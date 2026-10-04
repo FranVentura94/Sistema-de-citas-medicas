@@ -1,3 +1,4 @@
+using Newtonsoft.Json.Serialization;
 using Notificaciones.Api.Middlewares;
 using Notificaciones.Core;
 using Notificaciones.Infrastructure;
@@ -14,7 +15,10 @@ builder.Host.UseSerilog();
 builder.Services.AddCore(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddNewtonsoftJson(options =>
+{
+    options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
