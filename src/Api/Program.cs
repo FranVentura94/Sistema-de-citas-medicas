@@ -1,12 +1,21 @@
+using Core;
 using Core.Features.Pacientes.Interfaces;
 using Core.Features.Pacientes.Queries;
 using GenericPersistence.Abstractions;
+using Infrastructure;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Context;
 using Persistence.Repositories;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .WriteTo.Console()
+    .CreateLogger();
+builder.Host.UseSerilog();
 
 // Configurar conexión a SQL Server con ClinicaDbContext
 builder.Services.AddDbContext<ClinicaDbContext>(options =>
@@ -27,6 +36,12 @@ builder.Services.AddScoped(typeof(IRepository<,>), typeof(GenericPersistence.Imp
 // Registrar MediatR
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(GetPacientesQueryHandler).Assembly));
+
+// Registrar Core (opciones de configuración, ej. DownstreamOptions)
+builder.Services.AddCore(builder.Configuration);
+
+// Registrar Infrastructure (IRest, RolService, etc. - consumo de microservicios vía HTTP)
+builder.Services.AddInfraestructure(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

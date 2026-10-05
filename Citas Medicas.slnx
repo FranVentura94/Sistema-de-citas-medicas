@@ -17,6 +17,13 @@
   <Folder Name="/F.MedicalAppointments.GenericPersistence/">
     <Project Path="src/GenericPersistence/GenericPersistence.csproj" />
   </Folder>
+  <Folder Name="/G.MedicalAppointments.Tests/">
+    <Project Path="Tests/Tests.csproj" Id="796817bb-abd5-442c-9f1f-94b227f9c442" />
+  </Folder>
+  <Folder Name="/RST/">
+    <Project Path="RST/NugetPackage_Rest.Tests/NugetPackage_Rest.Tests.csproj" Id="feab0305-4eee-43aa-89aa-00f53e05cf7f" />
+    <Project Path="RST/NugetPackage_Rest/NugetPackage_Rest.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Identity/Identity.csproj" />
   </Folder>
