@@ -34,6 +34,29 @@ namespace NugetPackage_Rest.Tests
         }
 
         [Fact]
+        public async Task Get_WithQueryParameters_AppendsEscapedQueryStringToUri()
+        {
+            Uri? uriCapturada = null;
+            var client = new HttpClient(new FakeHttpMessageHandler(request =>
+            {
+                uriCapturada = request.RequestUri;
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("ok") };
+            }));
+            var rest = CreateRestBuilder(client);
+
+            await rest.Get
+                .WithoutAuth()
+                .WithQuery(new Dictionary<string, string> { ["sku"] = "ABC 123", ["cantidad"] = "5" })
+                .WithUri("https://api.example.com", "/orders")
+                .GetContentAsStringAsync();
+
+            Assert.NotNull(uriCapturada);
+            Assert.StartsWith("https://api.example.com/orders?", uriCapturada!.ToString());
+            Assert.Contains("sku=ABC%20123", uriCapturada.ToString());
+            Assert.Contains("cantidad=5", uriCapturada.ToString());
+        }
+
+        [Fact]
         public async Task Get_WithErrorStatusCode_ThrowsApiExceptionWithHttpErrorReason()
         {
             var client = new HttpClient(new FakeHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound)

@@ -1,15 +1,15 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace NugetPackage_Rest.Interfaces.IFluents
 {
     /// <summary>Contrato reservado con la misma forma que IFluentContent. Ningún builder
-    /// lo implementa hoy; se conserva por compatibilidad con versiones anteriores del
-    /// paquete.</summary>
+    /// lo implementa hoy; se conserva por compatibilidad con versiones anteriores del paquete.</summary>
     public interface IFluentResponse
     {
-        Task<string> GetContentAsStringAsync();
-        Task<byte[]> GetContentAsByteArrayAsync();
-        Task<T> DeserializeWithAsync<T>();
+        Task<string> GetContentAsStringAsync(CancellationToken cancellationToken = default);
+        Task<byte[]> GetContentAsByteArrayAsync(CancellationToken cancellationToken = default);
+        Task<T> DeserializeWithAsync<T>(CancellationToken cancellationToken = default);
         TaskAwaiter<HttpResponseMessage> GetAwaiter();
     }
 }

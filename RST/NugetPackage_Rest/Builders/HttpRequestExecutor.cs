@@ -1,5 +1,6 @@
 ﻿using NugetPackage_Rest.Exceptions;
 using Serilog;
+using System.Threading;
 
 namespace NugetPackage_Rest.Builders
 {
@@ -7,11 +8,11 @@ namespace NugetPackage_Rest.Builders
     /// en ApiException con su ApiFailureReason y queda registrado en Serilog.</summary>
     internal static class HttpRequestExecutor
     {
-        public static async Task<HttpResponseMessage> SendAsync(HttpClient client, HttpRequestMessage request)
+        public static async Task<HttpResponseMessage> SendAsync(HttpClient client, HttpRequestMessage request, CancellationToken cancellationToken = default)
         {
             try
             {
-                return await client.SendAsync(request);
+                return await client.SendAsync(request, cancellationToken);
             }
             catch (HttpRequestException ex)
             {

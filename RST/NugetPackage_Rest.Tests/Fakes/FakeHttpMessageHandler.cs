@@ -9,7 +9,7 @@ namespace NugetPackage_Rest.Tests.Fakes
     {
         private readonly Func<HttpRequestMessage, HttpResponseMessage>? _responseFactory;
         private readonly Exception? _exceptionToThrow;
-
+        public CancellationToken? ReceivedCancellationToken { get; private set; }
         public FakeHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory)
         {
             _responseFactory = responseFactory;
@@ -21,8 +21,10 @@ namespace NugetPackage_Rest.Tests.Fakes
         }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
-            CancellationToken cancellationToken)
+             CancellationToken cancellationToken)
         {
+            ReceivedCancellationToken = cancellationToken;
+
             if (_exceptionToThrow != null)
             {
                 throw _exceptionToThrow;

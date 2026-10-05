@@ -19,6 +19,7 @@ namespace NugetPackage_Rest.Builders
         private readonly HttpClient _client;
         private readonly HttpRequestMessage _request;
         private readonly RequestSettings _settings;
+        private readonly Dictionary<string, string> _queryParameters = new();
 
         public WithContentRequestBuilder(HttpClient client, HttpMethod method, RequestSettings settings)
         {
@@ -47,13 +48,31 @@ namespace NugetPackage_Rest.Builders
 
         public IFluentFormat WithUri([NotNull] string uri, string endpoint = "")
         {
-            _request.RequestUri = new Uri($"{uri}{endpoint ?? String.Empty}");
+            var uriCompleta = $"{uri}{endpoint ?? String.Empty}";
+
+            if (_queryParameters.Count > 0)
+            {
+                var separador = uriCompleta.Contains('?') ? "&" : "?";
+                var queryString = string.Join("&", _queryParameters.Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value)}"));
+                uriCompleta = $"{uriCompleta}{separador}{queryString}";
+            }
+
+            _request.RequestUri = new Uri(uriCompleta);
             return this;
         }
 
         public IFluentAuth<IFluentFormat> WithHeaders([NotNull] Dictionary<string, string> keyValues)
         {
             _request.AddHeaders(keyValues);
+            return this;
+        }
+
+        public IFluentAuth<IFluentFormat> WithQuery([NotNull] IDictionary<string, string> parametros)
+        {
+            foreach (var parametro in parametros)
+            {
+                _queryParameters[parametro.Key] = parametro.Value;
+            }
             return this;
         }
 
@@ -80,26 +99,26 @@ namespace NugetPackage_Rest.Builders
             return this;
         }
 
-        public async Task<string> GetContentAsStringAsync()
+        public async Task<string> GetContentAsStringAsync(CancellationToken cancellationToken = default)
         {
             await WriteRequestLog();
-            var response = await HttpRequestExecutor.SendAsync(_client, _request);
+            var response = await HttpRequestExecutor.SendAsync(_client, _request, cancellationToken);
             await HttpRequestExecutor.EnsureSuccessAsync(response, _request);
             return await HttpRequestExecutor.ReadContentAsStringAsync(response, _request);
         }
 
-        public async Task<byte[]> GetContentAsByteArrayAsync()
+        public async Task<byte[]> GetContentAsByteArrayAsync(CancellationToken cancellationToken = default)
         {
             await WriteRequestLog();
-            var response = await HttpRequestExecutor.SendAsync(_client, _request);
+            var response = await HttpRequestExecutor.SendAsync(_client, _request, cancellationToken);
             await HttpRequestExecutor.EnsureSuccessAsync(response, _request);
             return await HttpRequestExecutor.ReadContentAsByteArrayAsync(response, _request);
         }
 
-        public async Task<T> DeserializeWithAsync<T>()
+        public async Task<T> DeserializeWithAsync<T>(CancellationToken cancellationToken = default)
         {
             await WriteRequestLog();
-            var response = await HttpRequestExecutor.SendAsync(_client, _request);
+            var response = await HttpRequestExecutor.SendAsync(_client, _request, cancellationToken);
             await HttpRequestExecutor.EnsureSuccessAsync(response, _request);
             var content = await HttpRequestExecutor.ReadContentAsStringAsync(response, _request);
             try

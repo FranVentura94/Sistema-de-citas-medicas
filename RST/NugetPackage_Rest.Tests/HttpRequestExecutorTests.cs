@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Threading;           
 using System.Threading.Tasks;
 using NugetPackage_Rest.Builders;
 using NugetPackage_Rest.Exceptions;
@@ -78,6 +79,37 @@ namespace NugetPackage_Rest.Tests
             var request = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/orders");
 
             await HttpRequestExecutor.EnsureSuccessAsync(response, request);
+        }
+        [Fact]
+        public async Task SendAsync_WhenCancellationTokenIsCancelled_ThrowsApiExceptionWithTimeoutReason()
+        {
+            var client = new HttpClient(new FakeHttpMessageHandler(new TaskCanceledException()));
+            var request = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/orders");
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            var exception = await Assert.ThrowsAsync<ApiException>(
+                () => HttpRequestExecutor.SendAsync(client, request, cts.Token));
+
+            Assert.Equal(ApiFailureReason.Timeout, exception.Reason);
+        }
+        [Fact]
+        public async Task SendAsync_PassesCancellationTokenThroughToHttpClient()
+        {
+            using var cts = new CancellationTokenSource();
+            var handler = new FakeHttpMessageHandler(_ =>
+            {
+                cts.Cancel();
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            });
+            var client = new HttpClient(handler);
+            var request = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/orders");
+
+            await HttpRequestExecutor.SendAsync(client, request, cts.Token);
+
+            Assert.True(handler.ReceivedCancellationToken.HasValue);
+            Assert.True(handler.ReceivedCancellationToken!.Value.CanBeCanceled);
+            Assert.True(handler.ReceivedCancellationToken!.Value.IsCancellationRequested);
         }
     }
 }
