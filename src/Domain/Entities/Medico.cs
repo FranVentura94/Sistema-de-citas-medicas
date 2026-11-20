@@ -19,4 +19,7 @@ public class Medico
     // Auditoría y Estado
     public DateTime FechaIngreso { get; set; } = DateTime.Now;
     public bool Activo { get; set; } = true;
+
+    // Especialidades del médico (relación muchos a muchos)
+    public ICollection<MedicoEspecialidad> Especialidades { get; set; } = new List<MedicoEspecialidad>();
 }

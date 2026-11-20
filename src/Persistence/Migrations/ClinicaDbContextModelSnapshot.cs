@@ -17,98 +17,92 @@ namespace Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.11")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Domain.Entities.Atenciones", b =>
+            modelBuilder.Entity("Domain.Entities.Especialidad", b =>
                 {
-                    b.Property<long>("AtencionID")
+                    b.Property<int>("EspecialidadID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("AtencionID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EspecialidadID"));
 
-                    b.Property<long?>("CitaID")
-                        .HasColumnType("bigint");
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
 
-                    b.Property<string>("Estado")
+                    b.Property<string>("Codigo")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
 
-                    b.Property<DateTime?>("FechaFin")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaInicio")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MedicoID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("MotivoAtencion")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("PacienteID")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("AtencionID");
-
-                    b.HasIndex("CitaID");
-
-                    b.HasIndex("MedicoID");
-
-                    b.HasIndex("PacienteID");
-
-                    b.ToTable("Atenciones", "dbo");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Citas", b =>
-                {
-                    b.Property<long>("CitaID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("CitaID"));
-
-                    b.Property<int?>("EspecialidadID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Estado")
+                    b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2");
+                    b.HasKey("EspecialidadID");
 
-                    b.Property<DateTime>("FechaHoraFin")
-                        .HasColumnType("datetime2");
+                    b.HasIndex("Codigo")
+                        .IsUnique();
 
-                    b.Property<DateTime>("FechaHoraInicio")
-                        .HasColumnType("datetime2");
+                    b.ToTable("Especialidades", "dbo");
 
-                    b.Property<int>("MedicoID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("MotivoConsulta")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NotasCancelacion")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("PacienteID")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("CitaID");
-
-                    b.HasIndex("MedicoID");
-
-                    b.HasIndex("PacienteID");
-
-                    b.ToTable("Citas", "dbo");
+                    b.HasData(
+                        new
+                        {
+                            EspecialidadID = 1,
+                            Activo = true,
+                            Codigo = "MG",
+                            Descripcion = "Atención primaria y consulta general",
+                            Nombre = "Medicina General"
+                        },
+                        new
+                        {
+                            EspecialidadID = 2,
+                            Activo = true,
+                            Codigo = "PED",
+                            Descripcion = "Atención de niños y adolescentes",
+                            Nombre = "Pediatría"
+                        },
+                        new
+                        {
+                            EspecialidadID = 3,
+                            Activo = true,
+                            Codigo = "CAR",
+                            Descripcion = "Enfermedades del corazón",
+                            Nombre = "Cardiología"
+                        },
+                        new
+                        {
+                            EspecialidadID = 4,
+                            Activo = true,
+                            Codigo = "DER",
+                            Descripcion = "Enfermedades de la piel",
+                            Nombre = "Dermatología"
+                        },
+                        new
+                        {
+                            EspecialidadID = 5,
+                            Activo = true,
+                            Codigo = "GIN",
+                            Descripcion = "Salud de la mujer",
+                            Nombre = "Ginecología"
+                        },
+                        new
+                        {
+                            EspecialidadID = 6,
+                            Activo = true,
+                            Codigo = "TRA",
+                            Descripcion = "Lesiones de huesos y articulaciones",
+                            Nombre = "Traumatología"
+                        });
                 });
 
             modelBuilder.Entity("Domain.Entities.Medico", b =>
@@ -155,6 +149,89 @@ namespace Persistence.Migrations
                     b.HasKey("MedicoID");
 
                     b.ToTable("Medicos", "dbo");
+
+                    b.HasData(
+                        new
+                        {
+                            MedicoID = 1,
+                            Activo = true,
+                            Apellidos = "Rivas",
+                            Email = "medico@clinica.test",
+                            FechaIngreso = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Identification = "04512378-9",
+                            Nombres = "Carlos",
+                            NumeroColegiatura = "JVPM-10234",
+                            Telefono = "7012-3456",
+                            UsuarioID = 3
+                        },
+                        new
+                        {
+                            MedicoID = 2,
+                            Activo = true,
+                            Apellidos = "López",
+                            Email = "andrea.lopez@clinica.test",
+                            FechaIngreso = new DateTime(2026, 2, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Identification = "03456789-1",
+                            Nombres = "Andrea",
+                            NumeroColegiatura = "JVPM-11872",
+                            Telefono = "7123-9876"
+                        },
+                        new
+                        {
+                            MedicoID = 3,
+                            Activo = true,
+                            Apellidos = "Méndez",
+                            Email = "roberto.mendez@clinica.test",
+                            FechaIngreso = new DateTime(2026, 3, 10, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Identification = "02345678-5",
+                            Nombres = "Roberto",
+                            NumeroColegiatura = "JVPM-09561",
+                            Telefono = "7234-5678"
+                        });
+                });
+
+            modelBuilder.Entity("Domain.Entities.MedicoEspecialidad", b =>
+                {
+                    b.Property<int>("MedicoID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EspecialidadID")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Principal")
+                        .HasColumnType("bit");
+
+                    b.HasKey("MedicoID", "EspecialidadID");
+
+                    b.HasIndex("EspecialidadID");
+
+                    b.ToTable("MedicoEspecialidades", "dbo");
+
+                    b.HasData(
+                        new
+                        {
+                            MedicoID = 1,
+                            EspecialidadID = 1,
+                            Principal = true
+                        },
+                        new
+                        {
+                            MedicoID = 2,
+                            EspecialidadID = 2,
+                            Principal = true
+                        },
+                        new
+                        {
+                            MedicoID = 3,
+                            EspecialidadID = 3,
+                            Principal = true
+                        },
+                        new
+                        {
+                            MedicoID = 3,
+                            EspecialidadID = 1,
+                            Principal = false
+                        });
                 });
 
             modelBuilder.Entity("Domain.Entities.Paciente", b =>
@@ -230,48 +307,33 @@ namespace Persistence.Migrations
                     b.ToTable("Pacientes", "dbo");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Atenciones", b =>
+            modelBuilder.Entity("Domain.Entities.MedicoEspecialidad", b =>
                 {
-                    b.HasOne("Domain.Entities.Citas", "Cita")
-                        .WithMany()
-                        .HasForeignKey("CitaID");
+                    b.HasOne("Domain.Entities.Especialidad", "Especialidad")
+                        .WithMany("Medicos")
+                        .HasForeignKey("EspecialidadID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Domain.Entities.Medico", "Medico")
-                        .WithMany()
+                        .WithMany("Especialidades")
                         .HasForeignKey("MedicoID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.Paciente", "Paciente")
-                        .WithMany()
-                        .HasForeignKey("PacienteID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Cita");
+                    b.Navigation("Especialidad");
 
                     b.Navigation("Medico");
-
-                    b.Navigation("Paciente");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Citas", b =>
+            modelBuilder.Entity("Domain.Entities.Especialidad", b =>
                 {
-                    b.HasOne("Domain.Entities.Medico", "Medico")
-                        .WithMany()
-                        .HasForeignKey("MedicoID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Medicos");
+                });
 
-                    b.HasOne("Domain.Entities.Paciente", "Paciente")
-                        .WithMany()
-                        .HasForeignKey("PacienteID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Medico");
-
-                    b.Navigation("Paciente");
+            modelBuilder.Entity("Domain.Entities.Medico", b =>
+                {
+                    b.Navigation("Especialidades");
                 });
 #pragma warning restore 612, 618
         }

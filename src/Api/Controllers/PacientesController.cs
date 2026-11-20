@@ -3,48 +3,61 @@ using Core.Features.Pacientes.Queries;
 using Domain.Entities;
 using BuildingBlocks.Persistence;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // Todos los endpoints requieren token, salvo los marcados con [AllowAnonymous]
 public class PacientesController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IGenericRepository<Paciente> _pacienteRepo; // Agregamos el repositorio genérico
+    private readonly IGenericRepository<Paciente> _pacienteRepo;
 
     public PacientesController(IMediator mediator, IGenericRepository<Paciente> pacienteRepo)
     {
         _mediator = mediator;
-        _pacienteRepo = pacienteRepo; // Inyectamos el servicio
+        _pacienteRepo = pacienteRepo;
     }
 
-    // --- TUS METODOS ORIGINALES (INTACTOS) ---
+    // GET api/Pacientes
     [HttpGet]
-    public async Task<IActionResult> GetPacientes(
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPacientes(CancellationToken cancellationToken)
     {
-        var pacientes = await _mediator.Send(
-            new GetPacientesQuery(),
-            cancellationToken);
-
+        var pacientes = await _mediator.Send(new GetPacientesQuery(), cancellationToken);
         return Ok(pacientes);
     }
 
-    [HttpPost]
-    public async Task<IActionResult> CreatePaciente(
-        CreatePacienteCommand command,
-        CancellationToken cancellationToken)
+    // GET api/Pacientes/5
+    [HttpGet("{id:long}")]
+    public async Task<IActionResult> GetPaciente(long id, CancellationToken cancellationToken)
     {
-        var paciente = await _mediator.Send(
-            command,
-            cancellationToken);
-
+        var paciente = await _mediator.Send(new GetPacienteByIdQuery(id), cancellationToken);
         return Ok(paciente);
     }
 
-    // --- METODO NUEVO DE PRUEBA PARA VALIDAR EL REPOSITORIO GENERICO ---
+    // POST api/Pacientes
+    [HttpPost]
+    public async Task<IActionResult> CreatePaciente(CreatePacienteCommand command, CancellationToken cancellationToken)
+    {
+        var paciente = await _mediator.Send(command, cancellationToken);
+        return CreatedAtAction(nameof(GetPaciente), new { id = paciente.PacienteID }, paciente);
+    }
+
+    // PUT api/Pacientes/5
+    [HttpPut("{id:long}")]
+    public async Task<IActionResult> UpdatePaciente(long id, UpdatePacienteCommand command, CancellationToken cancellationToken)
+    {
+        if (id != command.PacienteID)
+            return BadRequest(new { mensaje = "El id de la ruta no coincide con el del paciente." });
+
+        var paciente = await _mediator.Send(command, cancellationToken);
+        return Ok(paciente);
+    }
+
+    // --- PRUEBA DEL REPOSITORIO GENERICO ---
     [HttpGet("test-generico")]
     public async Task<IActionResult> GetPacientesGenerico()
     {
@@ -52,7 +65,19 @@ public class PacientesController : ControllerBase
         return Ok(pacientes);
     }
 
-    // --- METODO NUEVO: PAGINACION GENERICA CON FILTRO Y ORDEN DINAMICOS ---
+    // --- GUARDADO GENERICO POR RANGO (LISTA) ---
+    [HttpPost("rango")]
+    public async Task<IActionResult> CrearPacientesEnRango(
+        List<Paciente> pacientes,
+        CancellationToken cancellationToken)
+    {
+        await _pacienteRepo.AddRangeAsync(pacientes);
+        await _pacienteRepo.SaveChangesAsync();
+
+        return Ok(pacientes);
+    }
+
+    // GET api/Pacientes/paginado?pageNumber=1&pageSize=10&filtro=...&ordenarPor=...
     [HttpGet("paginado")]
     public async Task<IActionResult> GetPacientesPaginado(
         int pageNumber = 1,
@@ -75,8 +100,10 @@ public class PacientesController : ControllerBase
         return Ok(resultado);
     }
 
-    // --- METODO NUEVO: BUSQUEDA GENERICA DE UN SOLO REGISTRO ---
+    // GET api/Pacientes/uno?numeroDocumento=...
+    // Lo consume el microservicio Notificaciones (llamada interna, sin token)
     [HttpGet("uno")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetPacienteUno(
         string numeroDocumento,
         CancellationToken cancellationToken)
@@ -89,17 +116,5 @@ public class PacientesController : ControllerBase
             return NotFound();
 
         return Ok(paciente);
-    }
-
-    // --- METODO NUEVO: GUARDADO GENERICO POR RANGO (LISTA) ---
-    [HttpPost("rango")]
-    public async Task<IActionResult> CrearPacientesEnRango(
-        List<Paciente> pacientes,
-        CancellationToken cancellationToken)
-    {
-        await _pacienteRepo.AddRangeAsync(pacientes);
-        await _pacienteRepo.SaveChangesAsync();
-
-        return Ok(pacientes);
     }
 }

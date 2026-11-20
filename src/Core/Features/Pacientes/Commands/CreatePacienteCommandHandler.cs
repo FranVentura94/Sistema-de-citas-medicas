@@ -1,3 +1,4 @@
+using Core.Exceptions;
 using Core.Features.Pacientes.Interfaces;
 using Domain.Entities;
 using MediatR;
@@ -18,13 +19,30 @@ public class CreatePacienteCommandHandler
         CreatePacienteCommand request,
         CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(request.NumeroDocumento) ||
+            string.IsNullOrWhiteSpace(request.Nombres) ||
+            string.IsNullOrWhiteSpace(request.Apellidos))
+        {
+            throw new DomainException(Errores.DATOS_INVALIDOS,
+                "Documento, nombres y apellidos son obligatorios.");
+        }
+
+        if (await _repository.ExisteDocumentoAsync(request.NumeroDocumento.Trim(), null, cancellationToken))
+        {
+            throw new DomainException(Errores.REGISTRO_DUPLICADO,
+                $"Ya existe un paciente con el documento {request.NumeroDocumento}.");
+        }
+
         var paciente = new Paciente
         {
-            CodigoPaciente = request.CodigoPaciente,
+            // Si no envían código, se genera uno automático
+            CodigoPaciente = string.IsNullOrWhiteSpace(request.CodigoPaciente)
+                ? $"PAC-{DateTime.Now:yyMMddHHmmss}"
+                : request.CodigoPaciente,
             TipoDocumento = request.TipoDocumento,
-            NumeroDocumento = request.NumeroDocumento,
-            Nombres = request.Nombres,
-            Apellidos = request.Apellidos,
+            NumeroDocumento = request.NumeroDocumento.Trim(),
+            Nombres = request.Nombres.Trim(),
+            Apellidos = request.Apellidos.Trim(),
             FechaNacimiento = request.FechaNacimiento,
             Sexo = request.Sexo,
             EstadoCivil = request.EstadoCivil,

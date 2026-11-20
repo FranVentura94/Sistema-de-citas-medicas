@@ -7,7 +7,9 @@ public enum Errores
     ERROR_SERVICIO_EXTERNO = 703,
     PASARELA_NO_DISPONIBLE = 704,
     AUTENTICACION_FALLIDA = 705,
-    COBRO_RECHAZADO = 706
+    COBRO_RECHAZADO = 706,
+    DATOS_INVALIDOS = 707,
+    REGISTRO_DUPLICADO = 708
 }
 
 public class DomainException : Exception
