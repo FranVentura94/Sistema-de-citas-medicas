@@ -14,6 +14,12 @@
   <Folder Name="/E.MedicalAppointments.Api/">
     <Project Path="src/Api/Api.csproj" Id="ab8b4752-8cfd-4390-95e6-8295c3b31c4d" />
   </Folder>
+  <Folder Name="/Services/" />
+  <Folder Name="/Services/Identity/">
+    <Project Path="src/Services/Identity/MsIdentity.Api/MsIdentity.Api.csproj" Id="63f99d5b-8430-40a6-8563-a13148039abd" />
+    <Project Path="src/Services/Identity/MsIdentity.Core/MsIdentity.Core.csproj" Id="f96b19c8-9ab3-43d1-8deb-d0c242b23820" />
+    <Project Path="src/Services/Identity/MsIdentity.Persistence/MsIdentity.Persistence.csproj" Id="7ea1c79e-ac40-426a-9a77-6d0614d8cc3c" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Identity/Identity.csproj" />
   </Folder>
