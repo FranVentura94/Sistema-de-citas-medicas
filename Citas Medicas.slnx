@@ -21,6 +21,12 @@
     <Project Path="src/Services/Agenda/MsAgenda.Infrastructure/MsAgenda.Infrastructure.csproj" Id="08028c26-12dc-4024-80da-29469669cc07" />
     <Project Path="src/Services/Agenda/MsAgenda.Persistence/MsAgenda.Persistence.csproj" Id="8c0eabe5-cfbe-42a0-a06d-e45e960899a3" />
   </Folder>
+  <Folder Name="/Services/Clinical/">
+    <Project Path="src/Services/Clinical/MsClinical.Api/MsClinical.Api.csproj" Id="10aab287-43d0-408c-b92e-7c1738e126a4" />
+    <Project Path="src/Services/Clinical/MsClinical.Core/MsClinical.Core.csproj" Id="bbc7b620-88c8-4845-a491-7c08ecf8f00b" />
+    <Project Path="src/Services/Clinical/MsClinical.Infrastructure/MsClinical.Infrastructure.csproj" Id="45b4c022-f4cc-41c8-a276-c4bb3002a6bf" />
+    <Project Path="src/Services/Clinical/MsClinical.Persistence/MsClinical.Persistence.csproj" Id="28b6fc5d-6235-4c47-b677-2429943e71fc" />
+  </Folder>
   <Folder Name="/Services/Identity/">
     <Project Path="src/Services/Identity/MsIdentity.Api/MsIdentity.Api.csproj" Id="63f99d5b-8430-40a6-8563-a13148039abd" />
     <Project Path="src/Services/Identity/MsIdentity.Core/MsIdentity.Core.csproj" Id="f96b19c8-9ab3-43d1-8deb-d0c242b23820" />
