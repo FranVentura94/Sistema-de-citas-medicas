@@ -2,8 +2,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { API_URL } from './config';
 import {
-  Atencion, Cita, Diagnostico, EspacioDisponible, Especialidad, EstadoCita,
-  Expediente, Medicamento, Medico, Paciente, ResumenCitas, SignosVitales
+  AccesoAgenda, Atencion, Cita, Diagnostico, EspacioDisponible, Especialidad, EstadoCita,
+  Expediente, HorarioMedico, Medicamento, Medico, MedicoPermitido, Paciente, ResumenCitas, SignosVitales, Triaje
 } from './models';
 
 // Una línea de la receta tal como la recibe MS_Clinical
@@ -66,6 +66,22 @@ export class AgendaService {
   resumen(fecha: string, medicoId?: number | null) {
     return this.http.get<ResumenCitas>(`${this.url}/Citas/resumen`, { params: params({ fecha, medicoId }) });
   }
+  cita(id: number) { return this.http.get<Cita>(`${this.url}/Citas/${id}`); }
+
+  // Horarios de atención de los médicos (consulta para todos; editar es solo del Administrador)
+  horarios(medicoId?: number | null) {
+    return this.http.get<HorarioMedico[]>(`${this.url}/Horarios`, { params: params({ medicoId }) });
+  }
+
+  // ---------- Agendas compartidas ----------
+  medicosPermitidos() { return this.http.get<MedicoPermitido[]>(`${this.url}/Accesos/medicos-permitidos`); }
+  compartidosPorMi() { return this.http.get<AccesoAgenda[]>(`${this.url}/Accesos/compartidos`); }
+  compartidosConmigo() { return this.http.get<AccesoAgenda[]>(`${this.url}/Accesos/recibidos`); }
+  misPacientes() { return this.http.get<{ pacienteId: number; pacienteNombre: string }[]>(`${this.url}/Accesos/mis-pacientes`); }
+  compartir(datos: { medicoAutorizadoId: number; alcance: 'TODA' | 'PACIENTES'; pacienteIds: number[]; fechaVencimiento: string | null; motivo: string | null }) {
+    return this.http.post<AccesoAgenda>(`${this.url}/Accesos`, datos);
+  }
+  revocar(id: number) { return this.http.delete<AccesoAgenda>(`${this.url}/Accesos/${id}`); }
 }
 
 // ============ MS_Clinical: atención, expediente y catálogos ============
@@ -88,6 +104,12 @@ export class ClinicalService {
     return this.http.put<Atencion>(`${this.url}/${id}/prescripcion`, receta);
   }
   finalizar(id: number, observaciones: string | null) { return this.http.post<Atencion>(`${this.url}/${id}/finalizar`, { observaciones }); }
+
+  // ---------- Triaje (preconsulta) ----------
+  triaje(citaId: number) { return this.http.get<Triaje | null>(`${API_URL}/Triajes/cita/${citaId}`); }
+  registrarTriaje(datos: SignosVitales & { citaId: number; notas: string | null }) {
+    return this.http.post<Triaje>(`${API_URL}/Triajes`, datos);
+  }
 
   expediente(pacienteId: number) { return this.http.get<Expediente>(`${API_URL}/expedientes/paciente/${pacienteId}`); }
   actualizarExpediente(pacienteId: number, datos: Partial<Expediente>) {

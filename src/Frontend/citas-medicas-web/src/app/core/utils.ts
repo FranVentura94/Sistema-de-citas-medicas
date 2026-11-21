@@ -54,6 +54,13 @@ export function saludo(): string {
   return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
 }
 
+
+// Nombre del rol para mostrar en pantalla
+export function nombreRol(rol: string | null | undefined): string {
+  const nombres: Record<string, string> = { Recepcion: 'Recepción', Medico: 'Médico', Enfermeria: 'Enfermería' };
+  return rol ? nombres[rol] ?? rol : '';
+}
+
 // Estados de cita a los que se puede pasar desde cada estado (igual que en MS_Agenda)
 export const TRANSICIONES: Record<string, string[]> = {
   PROGRAMADA: ['CONFIRMADA', 'EN_ESPERA', 'CANCELADA', 'NO_ASISTIO'],

@@ -29,6 +29,9 @@ internal class DirectoryService : IDirectoryService
     public Task<MedicoRemotoDto?> GetMedicoAsync(int medicoId, CancellationToken ct) =>
         GetAsync<MedicoRemotoDto>($"/api/Medicos/{medicoId}", "Médicos", ct);
 
+    public Task<MiPerfilRemotoDto?> GetMiPerfilAsync(CancellationToken ct) =>
+        GetAsync<MiPerfilRemotoDto>("/api/Empleados/mi-perfil", "Personal", ct);
+
     private async Task<T?> GetAsync<T>(string endpoint, string servicio, CancellationToken ct) where T : class
     {
         try

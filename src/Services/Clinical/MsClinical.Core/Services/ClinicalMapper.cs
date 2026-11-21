@@ -31,7 +31,8 @@ public static class ClinicalMapper
                 d.Tipo,
                 d.Observacion))
             .ToList(),
-        a.Prescripcion?.ToDto());
+        a.Prescripcion?.ToDto(),
+        a.SignosTomadosPor);
 
     public static SignosVitalesDto ToDto(this SignosVitales s)
     {

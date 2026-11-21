@@ -54,4 +54,25 @@ public class MedicoRepository : IMedicoRepository
             .OrderBy(e => e.Nombre)
             .ToListAsync(cancellationToken);
     }
+
+
+    // ---------- Administración ----------
+    public Task<bool> ExisteEspecialidadAsync(string codigo, string nombre, CancellationToken cancellationToken) =>
+        _context.Especialidades.AnyAsync(e => e.Codigo == codigo || e.Nombre == nombre, cancellationToken);
+
+    public async Task AddEspecialidadAsync(Especialidad especialidad, CancellationToken cancellationToken)
+    {
+        await _context.Especialidades.AddAsync(especialidad, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<Dictionary<int, string?>> GetGenerosAsync(IEnumerable<int> medicoIds, CancellationToken cancellationToken)
+    {
+        var ids = medicoIds.Distinct().ToList();
+        var filas = await _context.Empleados.AsNoTracking()
+            .Where(e => e.MedicoID != null && ids.Contains(e.MedicoID.Value))
+            .Select(e => new { MedicoID = e.MedicoID!.Value, e.Genero })
+            .ToListAsync(cancellationToken);
+        return filas.GroupBy(f => f.MedicoID).ToDictionary(g => g.Key, g => g.First().Genero);
+    }
 }

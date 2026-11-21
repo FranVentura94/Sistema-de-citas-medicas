@@ -13,6 +13,7 @@ import { InputIcon } from 'primeng/inputicon';
 import { Tooltip } from 'primeng/tooltip';
 import { Avatar } from 'primeng/avatar';
 import { AuthService } from '../../core/auth.service';
+import { Historial } from '../../shared/historial';
 import { DirectoryService } from '../../core/api.services';
 import { Paciente } from '../../core/models';
 import { edad, fechaParam, iniciales, leerFecha, mensajeError } from '../../core/utils';
@@ -47,7 +48,7 @@ const VACIO: FormPaciente = {
 
 @Component({
   selector: 'app-pacientes',
-  imports: [FormsModule, TableModule, Button, Dialog, InputText, Select, DatePicker, IconField, InputIcon, Tooltip, Avatar],
+  imports: [FormsModule, TableModule, Button, Dialog, InputText, Select, DatePicker, IconField, InputIcon, Tooltip, Avatar, Historial],
   template: `
     <div class="pagina-encabezado">
       <div>
@@ -116,6 +117,9 @@ const VACIO: FormPaciente = {
               @if (esMedico()) {
                 <p-button icon="pi pi-folder-open" [rounded]="true" [text]="true" pTooltip="Expediente" (onClick)="expediente(p)" />
               }
+              @if (esAdmin()) {
+                <p-button icon="pi pi-history" [rounded]="true" [text]="true" severity="help" pTooltip="Historial (auditoría)" (onClick)="verHistorial(historial, p)" />
+              }
             </td>
           </tr>
         </ng-template>
@@ -127,6 +131,8 @@ const VACIO: FormPaciente = {
     </div>
 
     <!-- ============ Formulario nuevo / editar ============ -->
+    <app-historial #historial />
+
     <p-dialog [(visible)]="dialogo" [modal]="true" [style]="{ width: '760px' }" [breakpoints]="{ '800px': '95vw' }"
               [header]="form.pacienteID ? 'Editar paciente' : 'Nuevo paciente'" [draggable]="false">
       <form #f="ngForm" class="formulario" (ngSubmit)="guardar(f)">
@@ -215,8 +221,17 @@ export class Pacientes {
   protected form: FormPaciente = { ...VACIO };
   protected hoy = new Date();
 
-  protected puedeEditar = computed(() => this.auth.tieneRol('Administrador', 'Recepcion'));
+  protected puedeEditar = computed(() => this.auth.tieneRol('Administrador', 'Recepcion', 'Medico'));
   protected esMedico = computed(() => this.auth.tieneRol('Medico', 'Administrador'));
+  protected esAdmin = computed(() => this.auth.tieneRol('Administrador'));
+
+  // Todo lo que se ha hecho con este paciente: su ficha (Directory) y su expediente (Clinical)
+  verHistorial(historial: Historial, p: Paciente): void {
+    historial.abrir(`${p.nombres} ${p.apellidos}`, [
+      { servicio: 'directory', entidad: 'Paciente', entidadId: p.pacienteID },
+      { servicio: 'clinical', entidad: 'Paciente', entidadId: p.pacienteID }
+    ]);
+  }
 
   protected edad = edad;
   protected ini = iniciales;

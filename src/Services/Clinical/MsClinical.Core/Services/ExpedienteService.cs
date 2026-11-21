@@ -1,4 +1,5 @@
 ﻿using MsClinical.Core.Dtos;
+using MsClinical.Core.Entities;
 using MsClinical.Core.Exceptions;
 using MsClinical.Core.Interfaces;
 
@@ -6,8 +7,8 @@ namespace MsClinical.Core.Services;
 
 public interface IExpedienteService
 {
-    Task<ExpedienteDto> GetPorPacienteAsync(long pacienteId, CancellationToken ct);
-    Task<ExpedienteDto> ActualizarAsync(long pacienteId, ExpedienteRequest request, CancellationToken ct);
+    Task<ExpedienteDto> GetPorPacienteAsync(long pacienteId, UsuarioActual usuario, CancellationToken ct);
+    Task<ExpedienteDto> ActualizarAsync(long pacienteId, ExpedienteRequest request, UsuarioActual usuario, CancellationToken ct);
     Task<List<DiagnosticoDto>> BuscarDiagnosticosAsync(string? buscar, CancellationToken ct);
     Task<List<MedicamentoDto>> BuscarMedicamentosAsync(string? buscar, CancellationToken ct);
 }
@@ -15,19 +16,24 @@ public interface IExpedienteService
 public class ExpedienteService : IExpedienteService
 {
     private readonly IClinicalRepository _repo;
+    private readonly IAgendaService _agenda;
+    private readonly IPacientesService _pacientes;
 
-    public ExpedienteService(IClinicalRepository repo)
+    public ExpedienteService(IClinicalRepository repo, IAgendaService agenda, IPacientesService pacientes)
     {
         _repo = repo;
+        _agenda = agenda;
+        _pacientes = pacientes;
     }
 
-    // Expediente + historial de atenciones del paciente
-    public async Task<ExpedienteDto> GetPorPacienteAsync(long pacienteId, CancellationToken ct)
+    // Expediente + historial de atenciones del paciente.
+    // Si todavía no existe, se abre en ese momento (así se pueden registrar alergias y antecedentes desde el inicio).
+    public async Task<ExpedienteDto> GetPorPacienteAsync(long pacienteId, UsuarioActual usuario, CancellationToken ct)
     {
-        var e = await _repo.GetExpedienteAsync(pacienteId, true, ct)
-            ?? throw new DomainException(Errores.NO_ENCONTRADO,
-                "El paciente todavía no tiene expediente (se crea en su primera atención).", 404);
+        await ValidarAccesoAsync(pacienteId, usuario, ct);
+        await ObtenerOCrearAsync(pacienteId, ct);
 
+        var e = (await _repo.GetExpedienteAsync(pacienteId, true, ct))!;
         return new ExpedienteDto(
             e.ExpedienteClinicoId,
             e.PacienteId,
@@ -41,10 +47,10 @@ public class ExpedienteService : IExpedienteService
             e.Atenciones.OrderByDescending(a => a.FechaInicio).Select(a => a.ToResumen()).ToList());
     }
 
-    public async Task<ExpedienteDto> ActualizarAsync(long pacienteId, ExpedienteRequest request, CancellationToken ct)
+    public async Task<ExpedienteDto> ActualizarAsync(long pacienteId, ExpedienteRequest request, UsuarioActual usuario, CancellationToken ct)
     {
-        var e = await _repo.GetExpedienteAsync(pacienteId, false, ct)
-            ?? throw new DomainException(Errores.NO_ENCONTRADO, "El paciente todavía no tiene expediente.", 404);
+        await ValidarAccesoAsync(pacienteId, usuario, ct);
+        var e = await ObtenerOCrearAsync(pacienteId, ct);
 
         e.Alergias = request.Alergias;
         e.AntecedentesPersonales = request.AntecedentesPersonales;
@@ -52,7 +58,7 @@ public class ExpedienteService : IExpedienteService
         e.Observaciones = request.Observaciones;
 
         await _repo.GuardarCambiosAsync(ct);
-        return await GetPorPacienteAsync(pacienteId, ct);
+        return await GetPorPacienteAsync(pacienteId, usuario, ct);
     }
 
     public async Task<List<DiagnosticoDto>> BuscarDiagnosticosAsync(string? buscar, CancellationToken ct)
@@ -65,5 +71,34 @@ public class ExpedienteService : IExpedienteService
     {
         var lista = await _repo.BuscarMedicamentosAsync(buscar, ct);
         return lista.Select(m => new MedicamentoDto(m.MedicamentoId, m.Nombre, m.PrincipioActivo, m.Presentacion, m.Concentracion)).ToList();
+    }
+
+    // ---------- Privacidad del historial ----------
+    // Administrador: todos. Médico: pacientes con cita con él o compartidos. Enfermería: pacientes de sus médicos.
+    private async Task ValidarAccesoAsync(long pacienteId, UsuarioActual usuario, CancellationToken ct)
+    {
+        if (usuario.EsAdministrador) return;
+        if (!await _agenda.PuedeVerPacienteAsync(pacienteId, ct))
+            throw new DomainException(Errores.SIN_PERMISO,
+                "No tienes acceso al historial de este paciente: no tiene citas contigo y nadie te lo ha compartido.", 403);
+    }
+
+    private async Task<ExpedienteClinico> ObtenerOCrearAsync(long pacienteId, CancellationToken ct)
+    {
+        var e = await _repo.GetExpedienteAsync(pacienteId, false, ct);
+        if (e is not null) return e;
+
+        var paciente = await _pacientes.GetPacienteAsync(pacienteId, ct)
+            ?? throw new DomainException(Errores.NO_ENCONTRADO, "El paciente no existe.", 404);
+
+        e = new ExpedienteClinico
+        {
+            PacienteId = pacienteId,
+            PacienteNombre = $"{paciente.Nombres} {paciente.Apellidos}".Trim(),
+            NumeroExpediente = $"EXP-{pacienteId:D6}",
+            FechaApertura = DateTime.Now
+        };
+        await _repo.AddExpedienteAsync(e, ct);
+        return e;
     }
 }

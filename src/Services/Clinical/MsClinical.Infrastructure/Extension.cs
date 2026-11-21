@@ -21,6 +21,7 @@ public static class Extension
 
         services.AddHttpContextAccessor();
         services.AddScoped<IAgendaService, AgendaService>();
+        services.AddScoped<IPacientesService, PacientesService>();
 
         return services;
     }

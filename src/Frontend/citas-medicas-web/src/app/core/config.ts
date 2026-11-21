@@ -5,4 +5,4 @@ export const API_URL = 'http://localhost:5000/api';
 export const APP_NAME = 'MediCitas';
 export const APP_SUBTITULO = 'Sistema de Gestión de Citas Médicas';
 
-export type Rol = 'Administrador' | 'Recepcion' | 'Medico';
+export type Rol = 'Administrador' | 'Recepcion' | 'Medico' | 'Enfermeria';

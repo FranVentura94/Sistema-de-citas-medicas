@@ -12,6 +12,8 @@ using Microsoft.OpenApi;
 using Persistence.Context;
 using Persistence.Repositories;
 using Serilog;
+using Core.Features.Empleados.Interfaces;
+using BuildingBlocks.Auditoria;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,9 +38,13 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 // ---------- Repositorios ----------
 builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<ClinicaDbContext>());
+
+// ---------- Auditoría de todo lo que se hace en este microservicio ----------
+builder.Services.AddAuditoria<ClinicaDbContext>("Directory");
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IPacienteRepository, PacienteRepository>();
 builder.Services.AddScoped<IMedicoRepository, MedicoRepository>();
+builder.Services.AddScoped<IEmpleadoRepository, EmpleadoRepository>();
 
 // ---------- Autenticación JWT (mismo token que emite MsIdentity) ----------
 var jwt = builder.Configuration.GetSection("Jwt");
@@ -111,6 +117,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("Frontend");
+app.UseAuditoria();       // registra intentos sin permiso
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

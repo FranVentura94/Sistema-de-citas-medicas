@@ -1,4 +1,4 @@
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -8,6 +8,7 @@ import { MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { Textarea } from 'primeng/textarea';
 import { Skeleton } from 'primeng/skeleton';
+import { AuthService } from '../../core/auth.service';
 import { ClinicalService, DirectoryService } from '../../core/api.services';
 import { Expediente, Paciente } from '../../core/models';
 import { edad, iniciales, leerFecha, mensajeError } from '../../core/utils';
@@ -48,8 +49,10 @@ import { edad, iniciales, leerFecha, mensajeError } from '../../core/utils';
         <!-- ============ Antecedentes ============ -->
         <div class="tarjeta">
           <div class="tarjeta-titulo"><i class="pi pi-exclamation-circle"></i> Antecedentes y alergias</div>
-          @if (sinExpediente()) {
-            <div class="vacio"><i class="pi pi-folder"></i>El expediente se crea automáticamente en la primera atención del paciente.</div>
+          @if (sinAcceso()) {
+            <div class="vacio bloqueado"><i class="pi pi-lock"></i>{{ sinAcceso() }}</div>
+          } @else if (sinExpediente()) {
+            <div class="vacio"><i class="pi pi-folder"></i>No se pudo abrir el expediente de este paciente.</div>
           } @else {
             <div class="formulario">
               <div class="campo completo alergias">
@@ -65,7 +68,9 @@ import { edad, iniciales, leerFecha, mensajeError } from '../../core/utils';
                 <textarea pTextarea rows="3" [(ngModel)]="form.antecedentesFamiliares"></textarea>
               </div>
             </div>
-            <div class="pie"><p-button label="Guardar antecedentes" icon="pi pi-save" (onClick)="guardar()" [loading]="guardando()" /></div>
+            @if (puedeEditar()) {
+              <div class="pie"><p-button label="Guardar antecedentes" icon="pi pi-save" (onClick)="guardar()" [loading]="guardando()" /></div>
+            }
           }
         </div>
 
@@ -130,6 +135,10 @@ export class ExpedientePage {
   protected paciente = signal<Paciente | null>(null);
   protected expediente = signal<Expediente | null>(null);
   protected sinExpediente = signal(false);
+  protected sinAcceso = signal<string | null>(null);
+  private auth = inject(AuthService);
+  // Enfermería consulta el expediente (alergias, antecedentes) pero no lo modifica
+  protected puedeEditar = computed(() => this.auth.tieneRol('Medico', 'Administrador'));
   protected guardando = signal(false);
   protected form = { alergias: '', antecedentesPersonales: '', antecedentesFamiliares: '', observaciones: '' };
 
@@ -142,7 +151,8 @@ export class ExpedientePage {
     this.clinical.expediente(id).subscribe({
       next: e => this.mostrar(e),
       error: (err: HttpErrorResponse) => {
-        if (err.status === 404) this.sinExpediente.set(true);
+        if (err.status === 403) this.sinAcceso.set(mensajeError(err));
+        else if (err.status === 404) this.sinExpediente.set(true);
         else this.toast.add({ severity: 'error', summary: 'Error', detail: mensajeError(err) });
       }
     });

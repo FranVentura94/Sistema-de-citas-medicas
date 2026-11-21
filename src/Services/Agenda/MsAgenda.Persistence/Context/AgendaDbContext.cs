@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MsAgenda.Core.Entities;
+using BuildingBlocks.Auditoria;
 
 namespace MsAgenda.Persistence.Context;
 
@@ -13,10 +14,39 @@ public class AgendaDbContext : DbContext
     public DbSet<HorarioMedico> HorariosMedicos => Set<HorarioMedico>();
     public DbSet<EstadoCita> Estados => Set<EstadoCita>();
     public DbSet<Cita> Citas => Set<Cita>();
+    public DbSet<AccesoAgenda> AccesosAgenda => Set<AccesoAgenda>();
+    public DbSet<AccesoPaciente> AccesoPacientes => Set<AccesoPaciente>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Tabla de auditoría (quién hizo qué y cuándo)
+        modelBuilder.AgregarAuditoria();
+
+        // ---------- Agendas compartidas entre médicos ----------
+        modelBuilder.Entity<AccesoAgenda>(e =>
+        {
+            e.ToTable("AccesosAgenda", "dbo");
+            e.HasKey(x => x.AccesoAgendaId);
+            e.Property(x => x.MedicoPropietarioNombre).HasMaxLength(150).IsRequired();
+            e.Property(x => x.MedicoAutorizadoNombre).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Alcance).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Motivo).HasMaxLength(300);
+            e.HasIndex(x => x.MedicoPropietarioId);
+            e.HasIndex(x => x.MedicoAutorizadoId);
+        });
+
+        modelBuilder.Entity<AccesoPaciente>(e =>
+        {
+            e.ToTable("AccesoPacientes", "dbo");
+            e.HasKey(x => new { x.AccesoAgendaId, x.PacienteId });
+            e.Property(x => x.PacienteNombre).HasMaxLength(200).IsRequired();
+            e.HasOne(x => x.Acceso)
+             .WithMany(a => a.Pacientes)
+             .HasForeignKey(x => x.AccesoAgendaId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
 
         // ---------- Consultorios ----------
         modelBuilder.Entity<Consultorio>(e =>

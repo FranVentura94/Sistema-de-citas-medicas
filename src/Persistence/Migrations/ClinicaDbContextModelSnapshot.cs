@@ -22,6 +22,285 @@ namespace Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("BuildingBlocks.Auditoria.RegistroAuditoria", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Accion")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Cambios")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Categoria")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Dispositivo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Entidad")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("EntidadId")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<bool>("Exito")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Ip")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("Rol")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Ruta")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Servicio")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int?>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UsuarioLogin")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("UsuarioNombre")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.HasIndex("Entidad", "EntidadId");
+
+                    b.ToTable("Auditoria", "dbo");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Empleado", b =>
+                {
+                    b.Property<int>("EmpleadoID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EmpleadoID"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Apellidos")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Cargo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Direccion")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("EmergenciaNombre")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("EmergenciaParentesco")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("EmergenciaTelefono")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime?>("FechaIngreso")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaNacimiento")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaRegistro")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("Genero")
+                        .HasMaxLength(1)
+                        .HasColumnType("nvarchar(1)");
+
+                    b.Property<string>("Identificacion")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int?>("MedicoID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Nombres")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Notas")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Telefono")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int?>("UsuarioID")
+                        .HasColumnType("int");
+
+                    b.HasKey("EmpleadoID");
+
+                    b.HasIndex("MedicoID")
+                        .IsUnique()
+                        .HasFilter("[MedicoID] IS NOT NULL");
+
+                    b.HasIndex("UsuarioID")
+                        .IsUnique()
+                        .HasFilter("[UsuarioID] IS NOT NULL");
+
+                    b.ToTable("Empleados", "dbo");
+
+                    b.HasData(
+                        new
+                        {
+                            EmpleadoID = 1,
+                            Activo = true,
+                            Apellidos = "del Sistema",
+                            Cargo = "Administrativo",
+                            Email = "admin@clinica.test",
+                            FechaRegistro = new DateTime(2026, 11, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Nombres = "Administrador",
+                            UsuarioID = 1
+                        },
+                        new
+                        {
+                            EmpleadoID = 2,
+                            Activo = true,
+                            Apellidos = "Martínez",
+                            Cargo = "Recepción",
+                            Email = "recepcion@clinica.test",
+                            FechaRegistro = new DateTime(2026, 11, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Genero = "F",
+                            Nombres = "Laura",
+                            UsuarioID = 2
+                        },
+                        new
+                        {
+                            EmpleadoID = 3,
+                            Activo = true,
+                            Apellidos = "Rivas",
+                            Cargo = "Médico",
+                            Email = "medico@clinica.test",
+                            FechaIngreso = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            FechaRegistro = new DateTime(2026, 11, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Genero = "M",
+                            Identificacion = "04512378-9",
+                            MedicoID = 1,
+                            Nombres = "Carlos",
+                            Telefono = "7012-3456",
+                            UsuarioID = 3
+                        },
+                        new
+                        {
+                            EmpleadoID = 4,
+                            Activo = true,
+                            Apellidos = "López",
+                            Cargo = "Médico",
+                            Email = "andrea.lopez@clinica.test",
+                            FechaIngreso = new DateTime(2026, 2, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            FechaRegistro = new DateTime(2026, 11, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Genero = "F",
+                            Identificacion = "03456789-1",
+                            MedicoID = 2,
+                            Nombres = "Andrea",
+                            Telefono = "7123-9876"
+                        },
+                        new
+                        {
+                            EmpleadoID = 5,
+                            Activo = true,
+                            Apellidos = "Méndez",
+                            Cargo = "Médico",
+                            Email = "roberto.mendez@clinica.test",
+                            FechaIngreso = new DateTime(2026, 3, 10, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            FechaRegistro = new DateTime(2026, 11, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Genero = "M",
+                            Identificacion = "02345678-5",
+                            MedicoID = 3,
+                            Nombres = "Roberto",
+                            Telefono = "7234-5678"
+                        },
+                        new
+                        {
+                            EmpleadoID = 6,
+                            Activo = true,
+                            Apellidos = "Pérez",
+                            Cargo = "Enfermería",
+                            FechaIngreso = new DateTime(2026, 4, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            FechaRegistro = new DateTime(2026, 11, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Genero = "F",
+                            Nombres = "Ana",
+                            Telefono = "7345-1122"
+                        });
+                });
+
+            modelBuilder.Entity("Domain.Entities.EnfermeraMedico", b =>
+                {
+                    b.Property<int>("EmpleadoID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MedicoID")
+                        .HasColumnType("int");
+
+                    b.HasKey("EmpleadoID", "MedicoID");
+
+                    b.HasIndex("MedicoID");
+
+                    b.ToTable("EnfermeraMedicos", "dbo");
+
+                    b.HasData(
+                        new
+                        {
+                            EmpleadoID = 6,
+                            MedicoID = 1
+                        });
+                });
+
             modelBuilder.Entity("Domain.Entities.Especialidad", b =>
                 {
                     b.Property<int>("EspecialidadID")
@@ -307,6 +586,35 @@ namespace Persistence.Migrations
                     b.ToTable("Pacientes", "dbo");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Empleado", b =>
+                {
+                    b.HasOne("Domain.Entities.Medico", "Medico")
+                        .WithMany()
+                        .HasForeignKey("MedicoID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Medico");
+                });
+
+            modelBuilder.Entity("Domain.Entities.EnfermeraMedico", b =>
+                {
+                    b.HasOne("Domain.Entities.Empleado", "Empleado")
+                        .WithMany("MedicosAsignados")
+                        .HasForeignKey("EmpleadoID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Medico", "Medico")
+                        .WithMany()
+                        .HasForeignKey("MedicoID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Empleado");
+
+                    b.Navigation("Medico");
+                });
+
             modelBuilder.Entity("Domain.Entities.MedicoEspecialidad", b =>
                 {
                     b.HasOne("Domain.Entities.Especialidad", "Especialidad")
@@ -324,6 +632,11 @@ namespace Persistence.Migrations
                     b.Navigation("Especialidad");
 
                     b.Navigation("Medico");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Empleado", b =>
+                {
+                    b.Navigation("MedicosAsignados");
                 });
 
             modelBuilder.Entity("Domain.Entities.Especialidad", b =>

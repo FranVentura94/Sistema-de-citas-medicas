@@ -45,4 +45,13 @@ public class HorariosController : ControllerBase
     {
         return Ok(await _service.CrearHorarioAsync(request, ct));
     }
+
+    // DELETE api/Horarios/5  (solo Administrador)
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> EliminarHorario(int id, CancellationToken ct)
+    {
+        await _service.EliminarHorarioAsync(id, ct);
+        return Ok(new { mensaje = "Horario eliminado." });
+    }
 }

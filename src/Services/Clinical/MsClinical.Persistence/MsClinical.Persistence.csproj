@@ -13,6 +13,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\MsClinical.Core\MsClinical.Core.csproj" />
+		<ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Auditoria\BuildingBlocks.Auditoria.csproj" />
 	</ItemGroup>
 
 </Project>

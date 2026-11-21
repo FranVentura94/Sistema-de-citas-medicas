@@ -84,4 +84,21 @@ public static class DbSeeder
 
         await db.SaveChangesAsync();
     }
+
+    // Nivel de acceso Enfermería (se agrega también a bases que ya existían)
+    public static async Task AsegurarRolEnfermeriaAsync(MsIdentityDbContext db)
+    {
+        if (await db.Roles.AnyAsync(r => r.Nombre == "Enfermeria"))
+            return;
+
+        var enfermeria = new Rol { Nombre = "Enfermeria", Descripcion = "Asiste al médico y toma signos vitales" };
+
+        var codigos = new[] { "PACIENTES_VER", "MEDICOS_VER", "HORARIOS_VER", "CITAS_VER", "ATENCION_VER" };
+        var permisos = await db.Permisos.Where(p => codigos.Contains(p.Codigo)).ToListAsync();
+        foreach (var p in permisos)
+            enfermeria.RolPermisos.Add(new RolPermiso { Permiso = p });
+
+        db.Roles.Add(enfermeria);
+        await db.SaveChangesAsync();
+    }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MsClinical.Core.Entities;
+using BuildingBlocks.Auditoria;
 
 namespace MsClinical.Persistence.Context;
 
@@ -18,10 +19,31 @@ public class ClinicalDbContext : DbContext
     public DbSet<Medicamento> Medicamentos => Set<Medicamento>();
     public DbSet<Prescripcion> Prescripciones => Set<Prescripcion>();
     public DbSet<PrescripcionDetalle> PrescripcionDetalles => Set<PrescripcionDetalle>();
+    public DbSet<Triaje> Triajes => Set<Triaje>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Tabla de auditoría (quién hizo qué y cuándo)
+        modelBuilder.AgregarAuditoria();
+
+        // ---------- Triaje (preconsulta de enfermería) ----------
+        modelBuilder.Entity<Triaje>(e =>
+        {
+            e.ToTable("Triajes", "dbo");
+            e.HasKey(x => x.TriajeId);
+            e.HasIndex(x => x.CitaId).IsUnique(); // un triaje por cita
+            e.HasIndex(x => x.PacienteId);
+            e.Property(x => x.PacienteNombre).HasMaxLength(200).IsRequired();
+            e.Property(x => x.MedicoNombre).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Temperatura).HasPrecision(4, 1);
+            e.Property(x => x.Peso).HasPrecision(5, 2);
+            e.Property(x => x.Talla).HasPrecision(5, 1);
+            e.Property(x => x.Notas).HasMaxLength(500);
+            e.Property(x => x.RegistradoPorNombre).HasMaxLength(150).IsRequired();
+            e.Property(x => x.RegistradoPorRol).HasMaxLength(30).IsRequired();
+        });
 
         // ---------- Expedientes ----------
         modelBuilder.Entity<ExpedienteClinico>(e =>
@@ -51,6 +73,7 @@ public class ClinicalDbContext : DbContext
             e.Property(x => x.Estado).HasMaxLength(20).IsRequired();
             e.Property(x => x.MotivoConsulta).HasMaxLength(500);
             e.Property(x => x.Observaciones).HasMaxLength(1000);
+            e.Property(x => x.SignosTomadosPor).HasMaxLength(150);
 
             e.HasOne(x => x.Expediente)
              .WithMany(x => x.Atenciones)

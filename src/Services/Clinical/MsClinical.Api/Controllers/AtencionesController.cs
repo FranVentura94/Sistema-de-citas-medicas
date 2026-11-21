@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MsClinical.Core.Dtos;
 using MsClinical.Core.Services;
+using BuildingBlocks.Auditoria;
 
 namespace MsClinical.Api.Controllers;
 
@@ -18,10 +19,7 @@ public class AtencionesController : ControllerBase
     }
 
     // Datos del usuario tomados del token JWT
-    private UsuarioActual Usuario => new(
-        User.Identity?.Name,
-        User.IsInRole("Administrador") ? "Administrador" : "Medico",
-        int.TryParse(User.FindFirst("medicoId")?.Value, out var id) ? id : null);
+    private UsuarioActual Usuario => User.Clinico();
 
     // POST api/Atenciones/iniciar   body: { "citaId": 1 }
     [HttpPost("iniciar")]
@@ -30,13 +28,15 @@ public class AtencionesController : ControllerBase
 
     // GET api/Atenciones/5
     [HttpGet("{id:long}")]
+    [Auditar("Consultó una atención médica", "Atencion", "id")]
     public async Task<IActionResult> Get(long id, CancellationToken ct) =>
-        Ok(await _service.GetAsync(id, ct));
+        Ok(await _service.GetAsync(id, Usuario, ct));
 
     // GET api/Atenciones/por-cita/1
     [HttpGet("por-cita/{citaId:long}")]
+    [Auditar("Consultó la atención médica de una cita", "Cita", "citaId")]
     public async Task<IActionResult> GetPorCita(long citaId, CancellationToken ct) =>
-        Ok(await _service.GetPorCitaAsync(citaId, ct));
+        Ok(await _service.GetPorCitaAsync(citaId, Usuario, ct));
 
     // GET api/Atenciones/mis-atenciones?fecha=2026-11-20
     [HttpGet("mis-atenciones")]

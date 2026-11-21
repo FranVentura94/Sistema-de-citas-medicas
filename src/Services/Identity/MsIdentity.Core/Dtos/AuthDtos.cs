@@ -11,4 +11,8 @@ public record UsuarioInfo(
     int? MedicoId,
     IReadOnlyList<string> Permisos);
 
-public record LoginResponse(string Token, DateTime ExpiraEn, UsuarioInfo Usuario);
+// Si RequiereCambioPassword = true no se entrega token: la persona debe crear su contraseña primero
+public record LoginResponse(string? Token, DateTime? ExpiraEn, UsuarioInfo? Usuario, bool RequiereCambioPassword);
+
+// Primer ingreso: cambia la contraseña temporal por la suya
+public record PrimerIngresoRequest(string NombreUsuario, string PasswordTemporal, string NuevaPassword);

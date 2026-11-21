@@ -2,6 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { CitaDetalle } from '../../shared/cita-detalle';
+import { AuthService } from '../../core/auth.service';
 import { MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { DatePicker } from 'primeng/datepicker';
@@ -14,7 +16,7 @@ const ATENDIBLES = ['PROGRAMADA', 'CONFIRMADA', 'EN_ESPERA', 'EN_ATENCION'];
 
 @Component({
   selector: 'app-mis-citas',
-  imports: [DatePipe, FormsModule, Button, DatePicker, Skeleton],
+  imports: [DatePipe, FormsModule, Button, DatePicker, Skeleton, CitaDetalle],
   template: `
     <div class="pagina-encabezado">
       <div>
@@ -35,7 +37,7 @@ const ATENDIBLES = ['PROGRAMADA', 'CONFIRMADA', 'EN_ESPERA', 'EN_ATENCION'];
     } @else {
       <div class="lista">
         @for (c of citas(); track c.citaId) {
-          <div class="tarjeta cita" [class.en-curso]="c.estadoCodigo === 'EN_ATENCION'">
+          <div class="tarjeta cita" [class.en-curso]="c.estadoCodigo === 'EN_ATENCION'" [class.compartida]="esCompartida(c)" (click)="detalle.abrir(c)">
             <div class="hora">
               <strong>{{ leer(c.fechaHoraInicio) | date: 'HH:mm' }}</strong>
               <span>{{ leer(c.fechaHoraFin) | date: 'HH:mm' }}</span>
@@ -45,11 +47,12 @@ const ATENDIBLES = ['PROGRAMADA', 'CONFIRMADA', 'EN_ESPERA', 'EN_ATENCION'];
               <strong>{{ c.pacienteNombre }}</strong>
               <span><i class="pi pi-id-card"></i> DUI {{ c.pacienteDocumento }} · <i class="pi pi-building"></i> {{ c.consultorioNombre }}</span>
               <span class="motivo"><i class="pi pi-comment"></i> {{ c.motivoConsulta || 'Sin motivo registrado' }}</span>
+              @if (esCompartida(c)) { <span class="etiqueta-compartida"><i class="pi pi-share-alt"></i> Agenda compartida: {{ c.medicoNombre }}</span> }
             </div>
             <span class="estado" [style.color]="c.estadoColor" [style.background]="c.estadoColor + '1a'">{{ c.estadoNombre }}</span>
-            <div class="botones">
+            <div class="botones" (click)="$event.stopPropagation()">
               <p-button icon="pi pi-folder-open" [text]="true" [rounded]="true" severity="secondary" (onClick)="expediente(c)" title="Expediente" />
-              @if (atendible(c)) {
+              @if (atendible(c) && !esCompartida(c)) {
                 <p-button [label]="c.estadoCodigo === 'EN_ATENCION' ? 'Continuar' : 'Atender'" icon="pi pi-play"
                           [loading]="abriendo() === c.citaId" (onClick)="atender(c)" />
               } @else if (c.estadoCodigo === 'ATENDIDA') {
@@ -60,6 +63,8 @@ const ATENDIBLES = ['PROGRAMADA', 'CONFIRMADA', 'EN_ESPERA', 'EN_ATENCION'];
         }
       </div>
     }
+
+    <app-cita-detalle #detalle (actualizada)="cargar()" />
   `,
   styles: `
     .capital::first-letter { text-transform: uppercase; }
@@ -74,6 +79,9 @@ const ATENDIBLES = ['PROGRAMADA', 'CONFIRMADA', 'EN_ESPERA', 'EN_ATENCION'];
       strong { font-size: 1.05rem; } span { font-size: .82rem; color: var(--mc-suave); } i { font-size: .75rem; } }
     .motivo { font-style: italic; }
     .botones { display: flex; gap: .5rem; align-items: center; }
+    .cita { cursor: pointer; transition: transform .15s, box-shadow .15s; &:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(16, 24, 40, .08); } }
+    .cita.compartida { border-left: 4px solid #6366f1; }
+    .etiqueta-compartida { color: #4f46e5 !important; font-weight: 600; }
   `
 })
 export class MisCitas {
@@ -81,6 +89,7 @@ export class MisCitas {
   private clinical = inject(ClinicalService);
   private toast = inject(MessageService);
   private router = inject(Router);
+  private auth = inject(AuthService);
 
   protected leer = leerFecha;
   protected ini = iniciales;
@@ -137,5 +146,10 @@ export class MisCitas {
 
   expediente(c: Cita): void {
     this.router.navigate(['/expediente', c.pacienteId]);
+  }
+
+  // Cita de otro médico que me compartió su agenda (la gestiono, pero no la atiendo)
+  esCompartida(c: Cita): boolean {
+    return c.medicoId !== this.auth.usuario()?.medicoId;
   }
 }

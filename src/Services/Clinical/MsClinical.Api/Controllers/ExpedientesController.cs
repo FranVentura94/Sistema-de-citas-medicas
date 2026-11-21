@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MsClinical.Core.Dtos;
 using MsClinical.Core.Services;
+using BuildingBlocks.Auditoria;
 
 namespace MsClinical.Api.Controllers;
 
@@ -19,15 +20,16 @@ public class ExpedientesController : ControllerBase
 
     // GET api/expedientes/paciente/3   (expediente + historial de atenciones)
     [HttpGet("expedientes/paciente/{pacienteId:long}")]
-    [Authorize(Roles = "Medico,Administrador")]
+    [Auditar("Consultó el expediente clínico", "Paciente", "pacienteId")]
+    [Authorize(Roles = "Medico,Administrador,Enfermeria")]
     public async Task<IActionResult> GetExpediente(long pacienteId, CancellationToken ct) =>
-        Ok(await _service.GetPorPacienteAsync(pacienteId, ct));
+        Ok(await _service.GetPorPacienteAsync(pacienteId, User.Clinico(), ct));
 
     // PUT api/expedientes/paciente/3   (alergias y antecedentes)
     [HttpPut("expedientes/paciente/{pacienteId:long}")]
     [Authorize(Roles = "Medico,Administrador")]
     public async Task<IActionResult> ActualizarExpediente(long pacienteId, ExpedienteRequest request, CancellationToken ct) =>
-        Ok(await _service.ActualizarAsync(pacienteId, request, ct));
+        Ok(await _service.ActualizarAsync(pacienteId, request, User.Clinico(), ct));
 
     // GET api/catalogos/diagnosticos?buscar=faring
     [HttpGet("catalogos/diagnosticos")]

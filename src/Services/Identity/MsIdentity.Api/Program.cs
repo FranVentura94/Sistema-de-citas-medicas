@@ -9,6 +9,7 @@ using MsIdentity.Persistence;
 using MsIdentity.Persistence.Context;
 using MsIdentity.Persistence.Seed;
 using Serilog;
+using BuildingBlocks.Auditoria;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,6 +84,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<MsIdentityDbContext>();
     await db.Database.MigrateAsync();
     await DbSeeder.SeedAsync(db);
+    await DbSeeder.AsegurarRolEnfermeriaAsync(db);
 }
 
 // ---------- Pipeline ----------
@@ -95,6 +97,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("Frontend");
+app.UseAuditoria();       // registra intentos sin permiso
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

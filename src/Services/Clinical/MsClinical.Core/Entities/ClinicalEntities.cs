@@ -39,6 +39,9 @@ public class Atencion
     public string? MotivoConsulta { get; set; }
     public string? Observaciones { get; set; }
 
+    // Si los signos vinieron del triaje: "Enf. Ana Pérez"
+    public string? SignosTomadosPor { get; set; }
+
     public ExpedienteClinico? Expediente { get; set; }
     public SignosVitales? SignosVitales { get; set; }
     public Prescripcion? Prescripcion { get; set; }

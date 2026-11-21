@@ -108,4 +108,14 @@ public class ClinicalRepository : IClinicalRepository
     public void RemoveDiagnostico(AtencionDiagnostico diagnostico) => _db.AtencionDiagnosticos.Remove(diagnostico);
 
     public Task GuardarCambiosAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
+
+    // ---------- Triaje ----------
+    public Task<Triaje?> GetTriajePorCitaAsync(long citaId, CancellationToken ct) =>
+        _db.Triajes.FirstOrDefaultAsync(t => t.CitaId == citaId, ct);
+
+    public async Task AddTriajeAsync(Triaje triaje, CancellationToken ct)
+    {
+        await _db.Triajes.AddAsync(triaje, ct);
+        await _db.SaveChangesAsync(ct);
+    }
 }

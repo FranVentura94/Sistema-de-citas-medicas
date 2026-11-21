@@ -9,7 +9,7 @@ import { DatePicker } from 'primeng/datepicker';
 import { Textarea } from 'primeng/textarea';
 import { Skeleton } from 'primeng/skeleton';
 import { AgendaService, DirectoryService } from '../../core/api.services';
-import { EspacioDisponible, Especialidad, Medico, Paciente } from '../../core/models';
+import { EspacioDisponible, Especialidad, Medico, Paciente, MedicoPermitido } from '../../core/models';
 import { fechaHoraParam, fechaParam, iniciales, leerFecha, mensajeError } from '../../core/utils';
 
 @Component({
@@ -195,6 +195,15 @@ export class Agendar {
   protected especialidadNombre = computed(() => this.especialidades().find(e => e.especialidadID === this.especialidadId())?.nombre);
   protected listo = computed(() => !!this.paciente() && !!this.medico() && !!this.espacio());
 
+  // Médico: solo puede agendar en su agenda y en las compartidas (lista vacía = todas)
+  private permitidos = signal<MedicoPermitido[]>([]);
+  private permitido(m: Medico): boolean {
+    const lista = this.permitidos();
+    if (lista.length === 0) return true;
+    const p = lista.find(x => x.medicoId === m.medicoID);
+    return !!p && (p.agendaCompleta || p.pacienteIds.includes(this.pacienteId() ?? -1));
+  }
+
   constructor() {
     this.directory.pacientes().subscribe(p => {
       this.pacientes.set(p.filter(x => x.activo));
@@ -203,6 +212,7 @@ export class Agendar {
       if (id) this.pacienteId.set(id);
     });
     this.directory.especialidades().subscribe(e => this.especialidades.set(e));
+    this.agenda.medicosPermitidos().subscribe(p => this.permitidos.set(p));
   }
 
   nombresEspecialidades(m: Medico): string {
@@ -214,7 +224,7 @@ export class Agendar {
     this.medico.set(null);
     this.espacio.set(null);
     this.medicos.set([]);
-    this.directory.medicos(id).subscribe(m => this.medicos.set(m.filter(x => x.activo)));
+    this.directory.medicos(id).subscribe(m => this.medicos.set(m.filter(x => x.activo && this.permitido(x))));
   }
 
   elegirMedico(m: Medico): void {

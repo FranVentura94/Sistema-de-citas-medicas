@@ -5,12 +5,15 @@ namespace Core.Features.Medicos;
 
 public static class MedicoMapper
 {
-    public static MedicoDto ToDto(this Medico m) => new(
+    // "Dr." / "Dra." según el género de su ficha de empleado; "Dr(a)." si no se conoce
+    public static string Titulo(string? genero) => genero == "F" ? "Dra." : genero == "M" ? "Dr." : "Dr(a).";
+
+    public static MedicoDto ToDto(this Medico m, string? genero = null) => new(
         m.MedicoID,
         m.UsuarioID,
         m.Nombres,
         m.Apellidos,
-        $"Dr(a). {m.Nombres} {m.Apellidos}",
+        $"{Titulo(genero)} {m.Nombres} {m.Apellidos}",
         m.NumeroColegiatura,
         m.Identification,
         m.Telefono,

@@ -23,6 +23,9 @@ public interface IClinicalRepository
     void RemoveDetalles(IEnumerable<PrescripcionDetalle> detalles);
     void RemoveDiagnostico(AtencionDiagnostico diagnostico);
 
+    Task<Triaje?> GetTriajePorCitaAsync(long citaId, CancellationToken ct);
+    Task AddTriajeAsync(Triaje triaje, CancellationToken ct);
+
     Task GuardarCambiosAsync(CancellationToken ct);
 }
 
@@ -31,4 +34,13 @@ public interface IAgendaService
 {
     Task<CitaRemotaDto?> GetCitaAsync(long citaId, CancellationToken ct);
     Task<CitaRemotaDto> CambiarEstadoCitaAsync(long citaId, string estado, string? notas, CancellationToken ct);
+
+    // ¿Puede quien llama ver el historial de este paciente? (privacidad del expediente)
+    Task<bool> PuedeVerPacienteAsync(long pacienteId, CancellationToken ct);
+}
+
+// Comunicación REST con MS_Directory (lo implementa MsClinical.Infrastructure)
+public interface IPacientesService
+{
+    Task<PacienteRemotoDto?> GetPacienteAsync(long pacienteId, CancellationToken ct);
 }

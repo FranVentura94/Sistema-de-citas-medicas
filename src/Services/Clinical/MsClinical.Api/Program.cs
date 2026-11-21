@@ -9,6 +9,7 @@ using MsClinical.Infrastructure;
 using MsClinical.Persistence;
 using MsClinical.Persistence.Context;
 using Serilog;
+using BuildingBlocks.Auditoria;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,6 +96,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("Frontend");
+app.UseAuditoria();       // registra intentos sin permiso
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

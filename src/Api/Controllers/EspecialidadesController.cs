@@ -2,6 +2,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Core.Features.Medicos.Commands;
 
 namespace Api.Controllers;
 
@@ -23,5 +24,13 @@ public class EspecialidadesController : ControllerBase
     {
         var especialidades = await _mediator.Send(new GetEspecialidadesQuery(), cancellationToken);
         return Ok(especialidades);
+    }
+
+    // POST api/Especialidades  (solo Administrador)
+    [HttpPost]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> CreateEspecialidad(CreateEspecialidadCommand command, CancellationToken cancellationToken)
+    {
+        return Ok(await _mediator.Send(command, cancellationToken));
     }
 }

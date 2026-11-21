@@ -39,6 +39,7 @@
     <Project Path="src/Identity/Identity.csproj" />
   </Folder>
   <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Auditoria/BuildingBlocks.Auditoria.csproj" Id="2d92a71c-e642-414e-bd5d-43fceafa58e5" />
     <Project Path="src/BuildingBlocks/BuildingBlocks.Persistence/BuildingBlocks.Persistence.csproj" />
   </Folder>
   <Project Path="src/BuildingBlocks/BuildingBlocks.Rest.Tests/BuildingBlocks.Rest.Tests.csproj" Id="ad9924db-09d9-4e44-98dc-d666ec53ec47" />

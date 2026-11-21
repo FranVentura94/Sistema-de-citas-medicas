@@ -66,6 +66,9 @@ const SIGNOS_VACIOS: SignosVitales = {
           <p-tabpanels>
             <!-- ---------- Signos vitales ---------- -->
             <p-tabpanel value="signos">
+              @if (a.signosTomadosPor) {
+                <div class="triaje-aviso"><i class="pi pi-heart-fill"></i> Signos tomados en el triaje por <b>{{ a.signosTomadosPor }}</b>. Puedes corregirlos si hace falta.</div>
+              }
               <div class="signos">
                 @for (s of camposSignos; track s.campo) {
                   <div class="signo">
@@ -206,6 +209,7 @@ const SIGNOS_VACIOS: SignosVitales = {
     }
   `,
   styles: `
+    .triaje-aviso { margin-bottom: 1rem; padding: .6rem .85rem; border-radius: 10px; background: #fdf2f8; color: #9d174d; font-size: .85rem; i { margin-right: .35rem; } }
     .cabecera { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;
       background: linear-gradient(120deg, #f0fdfa, #fff); }
     .paciente { display: flex; gap: 1rem; align-items: center;

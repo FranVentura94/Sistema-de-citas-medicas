@@ -5,8 +5,9 @@ import { Button } from 'primeng/button';
 import { Avatar } from 'primeng/avatar';
 import { Tooltip } from 'primeng/tooltip';
 import { AuthService } from '../core/auth.service';
+import { PerfilService } from '../core/perfil.service';
 import { APP_NAME, APP_SUBTITULO, Rol } from '../core/config';
-import { iniciales, mayuscula } from '../core/utils';
+import { iniciales, mayuscula, nombreRol, saludo } from '../core/utils';
 
 interface OpcionMenu {
   texto: string;
@@ -17,12 +18,19 @@ interface OpcionMenu {
 
 // Menú lateral: cada usuario ve solo las opciones de su rol
 const MENU: OpcionMenu[] = [
-  { texto: 'Inicio', icono: 'pi pi-home', ruta: '/dashboard', roles: ['Administrador', 'Recepcion', 'Medico'] },
+  { texto: 'Inicio', icono: 'pi pi-home', ruta: '/dashboard', roles: ['Administrador', 'Recepcion', 'Medico', 'Enfermeria'] },
   { texto: 'Mis citas', icono: 'pi pi-calendar-clock', ruta: '/mis-citas', roles: ['Medico'] },
-  { texto: 'Agendar cita', icono: 'pi pi-calendar-plus', ruta: '/agendar', roles: ['Administrador', 'Recepcion'] },
-  { texto: 'Agenda del día', icono: 'pi pi-calendar', ruta: '/agenda', roles: ['Administrador', 'Recepcion'] },
-  { texto: 'Pacientes', icono: 'pi pi-users', ruta: '/pacientes', roles: ['Administrador', 'Recepcion', 'Medico'] }
+  { texto: 'Agendar cita', icono: 'pi pi-calendar-plus', ruta: '/agendar', roles: ['Administrador', 'Recepcion', 'Medico'] },
+  { texto: 'Agenda del día', icono: 'pi pi-calendar', ruta: '/agenda', roles: ['Administrador', 'Recepcion', 'Medico', 'Enfermeria'] },
+  { texto: 'Pacientes', icono: 'pi pi-users', ruta: '/pacientes', roles: ['Administrador', 'Recepcion', 'Medico', 'Enfermeria'] },
+  { texto: 'Compartir agenda', icono: 'pi pi-share-alt', ruta: '/compartir', roles: ['Medico'] }
 ];
+
+// Panel de Administración: solo lo ve el Administrador
+const MENU_ADMIN: OpcionMenu[] = [
+  { texto: 'Personal', icono: 'pi pi-id-card', ruta: '/admin/personal', roles: ['Administrador'] },
+  { texto: 'Horarios', icono: 'pi pi-clock', ruta: '/admin/horarios', roles: ['Administrador'] },
+  { texto: 'Auditoría', icono: 'pi pi-shield', ruta: '/admin/auditoria', roles: ['Administrador'] }];
 
 @Component({
   selector: 'app-layout',
@@ -47,16 +55,26 @@ const MENU: OpcionMenu[] = [
               <span>{{ op.texto }}</span>
             </a>
           }
+
+          @if (menuAdmin().length) {
+            <span class="seccion">Administración</span>
+            @for (op of menuAdmin(); track op.ruta) {
+              <a [routerLink]="op.ruta" routerLinkActive="activo" (click)="menuAbierto.set(false)">
+                <i [class]="op.icono"></i>
+                <span>{{ op.texto }}</span>
+              </a>
+            }
+          }
         </nav>
 
         <div class="usuario">
           <p-avatar [label]="iniciales()" shape="circle" class="avatar" />
           <div class="datos">
-            <strong>{{ usuario()?.nombreCompleto }}</strong>
+            <strong>{{ perfil.nombreMostrado() }}</strong>
             <span>{{ rolTexto() }}</span>
           </div>
           <p-button icon="pi pi-sign-out" [rounded]="true" [text]="true" severity="secondary"
-                    pTooltip="Cerrar sesión" tooltipPosition="top" (onClick)="auth.logout()" />
+                    pTooltip="Cerrar sesión" tooltipPosition="top" (onClick)="salir()" />
         </div>
       </aside>
 
@@ -66,6 +84,7 @@ const MENU: OpcionMenu[] = [
       <main class="principal">
         <header class="barra">
           <p-button icon="pi pi-bars" [text]="true" severity="secondary" class="boton-menu" (onClick)="menuAbierto.set(true)" />
+          <div class="saludo-barra">{{ saludo }}, <b>{{ perfil.tratamiento() }}</b></div>
           <div class="fecha"><i class="pi pi-calendar"></i> {{ hoy }}</div>
         </header>
 
@@ -119,6 +138,8 @@ const MENU: OpcionMenu[] = [
       position: sticky; top: 0; z-index: 10;
     }
     .fecha { color: var(--mc-suave); display: flex; gap: .5rem; align-items: center; margin-left: auto; }
+    .saludo-barra { color: var(--mc-suave); b { color: var(--mc-texto); } }
+    @media (max-width: 640px) { .saludo-barra { display: none; } }
     .boton-menu { display: none; }
     .pagina { padding: 2rem; max-width: 1400px; }
     .fondo-oscuro { display: none; }
@@ -136,7 +157,10 @@ const MENU: OpcionMenu[] = [
 })
 export class Layout {
   protected auth = inject(AuthService);
+  protected perfil = inject(PerfilService);
   private router = inject(Router);
+
+  protected saludo = saludo();
 
   protected appName = APP_NAME;
   protected subtitulo = APP_SUBTITULO;
@@ -145,14 +169,20 @@ export class Layout {
   protected hoy = mayuscula(new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
 
   protected menu = computed(() => MENU.filter(op => this.auth.tieneRol(...op.roles)));
-  protected iniciales = computed(() => iniciales(this.usuario()?.nombreCompleto ?? '?'));
-  protected rolTexto = computed(() => {
-    const rol = this.usuario()?.rol;
-    return rol === 'Recepcion' ? 'Recepción' : rol === 'Medico' ? 'Médico' : rol ?? '';
-  });
+  protected menuAdmin = computed(() => MENU_ADMIN.filter(op => this.auth.tieneRol(...op.roles)));
+  protected iniciales = computed(() => iniciales(this.perfil.nombreMostrado() || '?'));
+  protected rolTexto = computed(() => nombreRol(this.usuario()?.rol));
 
   constructor() {
+    // Datos de la persona para saludarla por su nombre
+    this.perfil.cargar();
+
     // En celular, cerrar el menú al navegar
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => this.menuAbierto.set(false));
+  }
+
+  salir(): void {
+    this.perfil.limpiar();
+    this.auth.logout();
   }
 }

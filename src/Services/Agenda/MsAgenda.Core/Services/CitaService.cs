@@ -7,40 +7,59 @@ namespace MsAgenda.Core.Services;
 
 public interface ICitaService
 {
-    Task<List<CitaDto>> GetCitasAsync(CitaFiltro filtro, CancellationToken ct);
-    Task<CitaDto> GetCitaAsync(long id, CancellationToken ct);
-    Task<CitaDto> CrearCitaAsync(CrearCitaRequest request, string? usuario, CancellationToken ct);
-    Task<CitaDto> CambiarEstadoAsync(long id, CambiarEstadoRequest request, CancellationToken ct);
+    Task<List<CitaDto>> GetCitasAsync(CitaFiltro filtro, UsuarioAgenda usuario, CancellationToken ct);
+    Task<CitaDto> GetCitaAsync(long id, UsuarioAgenda usuario, CancellationToken ct);
+    Task<CitaDto> CrearCitaAsync(CrearCitaRequest request, UsuarioAgenda usuario, CancellationToken ct);
+    Task<CitaDto> CambiarEstadoAsync(long id, CambiarEstadoRequest request, UsuarioAgenda usuario, CancellationToken ct);
     Task<List<EstadoCitaDto>> GetEstadosAsync(CancellationToken ct);
-    Task<ResumenCitasDto> GetResumenAsync(DateOnly fecha, int? medicoId, CancellationToken ct);
+    Task<ResumenCitasDto> GetResumenAsync(DateOnly fecha, int? medicoId, UsuarioAgenda usuario, CancellationToken ct);
 }
 
 public class CitaService : ICitaService
 {
+    // Lo que un médico que NO es el dueño de la cita (agenda compartida) puede hacerle
+    private static readonly int[] EstadosParaAutorizado = { EstadosCita.CONFIRMADA, EstadosCita.EN_ESPERA, EstadosCita.CANCELADA, EstadosCita.NO_ASISTIO };
+    // Lo que Enfermería puede hacerle a una cita de los médicos que asiste
+    private static readonly int[] EstadosParaEnfermeria = { EstadosCita.CONFIRMADA, EstadosCita.EN_ESPERA, EstadosCita.NO_ASISTIO };
+
     private readonly IAgendaRepository _repo;
     private readonly IDirectoryService _directory;
+    private readonly IPermisosAgenda _permisos;
 
-    public CitaService(IAgendaRepository repo, IDirectoryService directory)
+    public CitaService(IAgendaRepository repo, IDirectoryService directory, IPermisosAgenda permisos)
     {
         _repo = repo;
         _directory = directory;
+        _permisos = permisos;
     }
 
-    public async Task<List<CitaDto>> GetCitasAsync(CitaFiltro filtro, CancellationToken ct)
+    // Cada quien ve solo las citas que le corresponden (ver PermisosAgenda)
+    public async Task<List<CitaDto>> GetCitasAsync(CitaFiltro filtro, UsuarioAgenda usuario, CancellationToken ct)
     {
+        var permiso = await _permisos.ObtenerAsync(usuario, ct);
         var citas = await _repo.GetCitasAsync(filtro, ct);
-        return citas.Select(ToDto).ToList();
+        return citas.Where(c => permiso.PuedeVer(c.MedicoId, c.PacienteId)).Select(ToDto).ToList();
     }
 
-    public async Task<CitaDto> GetCitaAsync(long id, CancellationToken ct)
+    public async Task<CitaDto> GetCitaAsync(long id, UsuarioAgenda usuario, CancellationToken ct)
     {
         var cita = await _repo.GetCitaAsync(id, ct)
             ?? throw new DomainException(Errores.NO_ENCONTRADO, $"No existe la cita {id}.", 404);
+
+        var permiso = await _permisos.ObtenerAsync(usuario, ct);
+        if (!permiso.PuedeVer(cita.MedicoId, cita.PacienteId))
+            throw new DomainException(Errores.SIN_PERMISO, "No tienes acceso a esta cita.", 403);
+
         return ToDto(cita);
     }
 
-    public async Task<CitaDto> CrearCitaAsync(CrearCitaRequest request, string? usuario, CancellationToken ct)
+    public async Task<CitaDto> CrearCitaAsync(CrearCitaRequest request, UsuarioAgenda usuario, CancellationToken ct)
     {
+        // El médico agenda en su propia agenda o en las que le compartieron (si incluyen a ese paciente)
+        var permiso = await _permisos.ObtenerAsync(usuario, ct);
+        if (!(usuario.EsAdmin || usuario.EsRecepcion || usuario.EsMedico) || !permiso.PuedeVer(request.MedicoId, request.PacienteId))
+            throw new DomainException(Errores.SIN_PERMISO, "No puedes agendar en la agenda de ese médico.", 403);
+
         if (request.FechaHoraInicio <= DateTime.Now)
             throw new DomainException(Errores.DATOS_INVALIDOS, "La cita debe agendarse en una fecha y hora futura.");
 
@@ -95,20 +114,24 @@ public class CitaService : ICitaService
             FechaHoraFin = fin,
             EstadoCitaId = EstadosCita.PROGRAMADA,
             MotivoConsulta = request.MotivoConsulta,
-            UsuarioRegistro = usuario,
+            UsuarioRegistro = usuario.Login,
             FechaCreacion = DateTime.Now
         };
 
         await _repo.AddCitaAsync(cita, ct);
 
         // Se relee para traer el estado y el consultorio
-        return await GetCitaAsync(cita.CitaId, ct);
+        return await GetCitaAsync(cita.CitaId, usuario, ct);
     }
 
-    public async Task<CitaDto> CambiarEstadoAsync(long id, CambiarEstadoRequest request, CancellationToken ct)
+    public async Task<CitaDto> CambiarEstadoAsync(long id, CambiarEstadoRequest request, UsuarioAgenda usuario, CancellationToken ct)
     {
         var cita = await _repo.GetCitaAsync(id, ct)
             ?? throw new DomainException(Errores.NO_ENCONTRADO, $"No existe la cita {id}.", 404);
+
+        var permiso = await _permisos.ObtenerAsync(usuario, ct);
+        if (!permiso.PuedeVer(cita.MedicoId, cita.PacienteId))
+            throw new DomainException(Errores.SIN_PERMISO, "No tienes acceso a esta cita.", 403);
 
         var estados = await _repo.GetEstadosAsync(ct);
         var nuevo = estados.FirstOrDefault(e => e.Codigo.Equals(request.Estado?.Trim(), StringComparison.OrdinalIgnoreCase))
@@ -117,6 +140,13 @@ public class CitaService : ICitaService
         if (!EstadosCita.Transiciones[cita.EstadoCitaId].Contains(nuevo.EstadoCitaId))
             throw new DomainException(Errores.TRANSICION_INVALIDA,
                 $"Una cita en estado '{cita.Estado?.Nombre}' no puede pasar a '{nuevo.Nombre}'.", 409);
+
+        // Atender (En atención / Atendida) es solo del médico dueño de la cita
+        if (usuario.EsMedico && !permiso.EsPropia(cita.MedicoId) && !EstadosParaAutorizado.Contains(nuevo.EstadoCitaId))
+            throw new DomainException(Errores.SIN_PERMISO, "Solo el médico de la cita puede atenderla.", 403);
+
+        if (usuario.EsEnfermeria && !EstadosParaEnfermeria.Contains(nuevo.EstadoCitaId))
+            throw new DomainException(Errores.SIN_PERMISO, $"Enfermería no puede pasar una cita a '{nuevo.Nombre}'.", 403);
 
         cita.EstadoCitaId = nuevo.EstadoCitaId;
         cita.Estado = nuevo;
@@ -135,10 +165,12 @@ public class CitaService : ICitaService
     }
 
     // Conteo de citas del día por estado (para el dashboard)
-    public async Task<ResumenCitasDto> GetResumenAsync(DateOnly fecha, int? medicoId, CancellationToken ct)
+    public async Task<ResumenCitasDto> GetResumenAsync(DateOnly fecha, int? medicoId, UsuarioAgenda usuario, CancellationToken ct)
     {
         var desde = fecha.ToDateTime(TimeOnly.MinValue);
-        var citas = await _repo.GetCitasAsync(new CitaFiltro(desde, desde.AddDays(1), medicoId, null, null), ct);
+        var permiso = await _permisos.ObtenerAsync(usuario, ct);
+        var citas = (await _repo.GetCitasAsync(new CitaFiltro(desde, desde.AddDays(1), medicoId, null, null), ct))
+            .Where(c => permiso.PuedeVer(c.MedicoId, c.PacienteId)).ToList();
         var estados = await _repo.GetEstadosAsync(ct);
 
         var porEstado = estados

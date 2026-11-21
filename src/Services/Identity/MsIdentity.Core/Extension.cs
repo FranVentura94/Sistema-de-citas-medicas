@@ -10,7 +10,7 @@ public static class Extension
     public static IServiceCollection AddCore(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
-
+        services.AddScoped<IUsuarioService, UsuarioService>();
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IAuthService, AuthService>();
 

@@ -14,6 +14,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\MsIdentity.Core\MsIdentity.Core.csproj" />
 		<ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Persistence\BuildingBlocks.Persistence.csproj" />
+		<ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Auditoria\BuildingBlocks.Auditoria.csproj" />
 	</ItemGroup>
 
 </Project>

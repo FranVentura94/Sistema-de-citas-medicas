@@ -9,6 +9,8 @@ import { DatePicker } from 'primeng/datepicker';
 import { Select } from 'primeng/select';
 import { Menu } from 'primeng/menu';
 import { AgendaService, DirectoryService } from '../../core/api.services';
+import { AuthService } from '../../core/auth.service';
+import { CitaDetalle } from '../../shared/cita-detalle';
 import { Cita, EstadoCita, Medico } from '../../core/models';
 import { TRANSICIONES, fechaParam, leerFecha, mensajeError } from '../../core/utils';
 
@@ -21,15 +23,18 @@ const ACCIONES: Record<string, { texto: string; icono: string }> = {
 
 @Component({
   selector: 'app-agenda',
-  imports: [DatePipe, FormsModule, RouterLink, TableModule, Button, DatePicker, Select, Menu],
+  imports: [DatePipe, FormsModule, RouterLink, TableModule, Button, DatePicker, Select, Menu, CitaDetalle],
   template: `
     <div class="pagina-encabezado">
       <div>
         <h1>Agenda del día</h1>
         <p class="capital">{{ fecha() | date: 'EEEE d \\'de\\' MMMM \\'de\\' y' }}</p>
       </div>
-      <p-button label="Agendar cita" icon="pi pi-calendar-plus" routerLink="/agendar" />
+      @if (!esEnfermeria()) {
+        <p-button label="Agendar cita" icon="pi pi-calendar-plus" routerLink="/agendar" />
+      }
     </div>
+    @if (aviso()) { <div class="aviso-rol"><i class="pi pi-info-circle"></i> {{ aviso() }}</div> }
 
     <!-- ============ Filtros ============ -->
     <div class="tarjeta filtros">
@@ -39,7 +44,7 @@ const ACCIONES: Record<string, { texto: string; icono: string }> = {
         <p-button icon="pi pi-chevron-right" [text]="true" [rounded]="true" (onClick)="moverDia(1)" />
         <p-button label="Hoy" [outlined]="true" size="small" (onClick)="irHoy()" />
       </div>
-      <p-select [options]="medicos()" [ngModel]="medicoId()" (ngModelChange)="medicoId.set($event)" optionLabel="nombreCompleto"
+      <p-select [options]="medicosVisibles()" [ngModel]="medicoId()" (ngModelChange)="medicoId.set($event)" optionLabel="nombreCompleto"
                 optionValue="medicoID" [showClear]="true" placeholder="Todos los médicos" />
       <p-select [options]="estados()" [ngModel]="estado()" (ngModelChange)="estado.set($event)" optionLabel="nombre"
                 optionValue="codigo" [showClear]="true" placeholder="Todos los estados" />
@@ -60,7 +65,7 @@ const ACCIONES: Record<string, { texto: string; icono: string }> = {
           <tr><th>Hora</th><th>Paciente</th><th>Médico</th><th>Consultorio</th><th>Motivo</th><th>Estado</th><th></th></tr>
         </ng-template>
         <ng-template #body let-c>
-          <tr>
+          <tr class="fila" (click)="detalle.abrir(c)">
             <td class="hora">{{ leer(c.fechaHoraInicio) | date: 'HH:mm' }}<span>{{ leer(c.fechaHoraFin) | date: 'HH:mm' }}</span></td>
             <td><strong>{{ c.pacienteNombre }}</strong><br /><small class="texto-suave">DUI {{ c.pacienteDocumento }}</small></td>
             <td>{{ c.medicoNombre }}<br /><small class="texto-suave">{{ c.especialidadNombre }}</small></td>
@@ -70,7 +75,7 @@ const ACCIONES: Record<string, { texto: string; icono: string }> = {
             <td class="derecha">
               @if (acciones(c).length) {
                 <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" severity="secondary"
-                          (onClick)="abrirMenu(menu, $event, c)" />
+                          (onClick)="abrirMenu(menu, $event, c); $event.stopPropagation()" (click)="$event.stopPropagation()" />
               }
             </td>
           </tr>
@@ -82,6 +87,7 @@ const ACCIONES: Record<string, { texto: string; icono: string }> = {
     </div>
 
     <p-menu #menu [model]="menuItems()" [popup]="true" appendTo="body" />
+    <app-cita-detalle #detalle (actualizada)="reemplazar($event)" />
   `,
   styles: `
     .capital::first-letter { text-transform: uppercase; }
@@ -99,6 +105,8 @@ const ACCIONES: Record<string, { texto: string; icono: string }> = {
     .hora { font-weight: 700; color: var(--mc-primario-oscuro); font-size: 1rem; span { display: block; font-size: .75rem; font-weight: 400; color: var(--mc-suave); } }
     .motivo { max-width: 220px; color: var(--mc-suave); }
     .derecha { text-align: right; }
+    .fila { cursor: pointer; }
+    .aviso-rol { margin: -.5rem 0 1rem; font-size: .85rem; color: #1d4ed8; background: #eff6ff; border-radius: 10px; padding: .55rem .8rem; }
   `
 })
 export class Agenda {
@@ -107,6 +115,7 @@ export class Agenda {
   private toast = inject(MessageService);
   private confirmacion = inject(ConfirmationService);
   private route = inject(ActivatedRoute);
+  private auth = inject(AuthService);
 
   protected leer = leerFecha;
   protected fecha = signal(this.fechaInicial());
@@ -117,6 +126,16 @@ export class Agenda {
   protected estado = signal<string | null>(null);
   protected cargando = signal(true);
   protected menuItems = signal<MenuItem[]>([]);
+  private permitidos = signal<number[] | null>(null);   // null = todos los médicos
+
+  protected esEnfermeria = computed(() => this.auth.tieneRol('Enfermeria'));
+  protected medicosVisibles = computed(() => {
+    const ids = this.permitidos();
+    return ids ? this.medicos().filter(m => ids.includes(m.medicoID)) : this.medicos();
+  });
+  protected aviso = computed(() =>
+    this.auth.tieneRol('Medico') ? 'Ves tus citas y las de las agendas que otros médicos te compartieron.'
+      : this.esEnfermeria() ? 'Ves las citas de los médicos a los que asistes. Haz clic en un paciente para tomarle los signos (triaje).' : null);
 
   protected filtradas = computed(() =>
     this.citas().filter(c =>
@@ -125,6 +144,7 @@ export class Agenda {
   constructor() {
     this.directory.medicos().subscribe(m => this.medicos.set(m));
     this.agenda.estados().subscribe(e => this.estados.set(e));
+    this.agenda.medicosPermitidos().subscribe(p => this.permitidos.set(p.length ? p.map(x => x.medicoId) : null));
     this.cargar();
   }
 
@@ -165,7 +185,12 @@ export class Agenda {
   }
 
   acciones(c: Cita): string[] {
-    return TRANSICIONES[c.estadoCodigo] ?? [];
+    const todas = TRANSICIONES[c.estadoCodigo] ?? [];
+    return this.esEnfermeria() ? todas.filter(e => e !== 'CANCELADA') : todas;
+  }
+
+  reemplazar(actualizada: Cita): void {
+    this.citas.update(lista => lista.map(x => (x.citaId === actualizada.citaId ? actualizada : x)));
   }
 
   abrirMenu(menu: Menu, evento: Event, c: Cita): void {

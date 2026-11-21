@@ -59,6 +59,22 @@ internal class AgendaService : IAgendaService
         }
     }
 
+    public async Task<bool> PuedeVerPacienteAsync(long pacienteId, CancellationToken ct)
+    {
+        try
+        {
+            var r = await _rest.Get
+                .WithBearer(ObtenerToken())
+                .WithUri(_options.AgendaBaseUrl, $"/api/Accesos/puede-ver/{pacienteId}")
+                .DeserializeWithAsync<PuedeVerRemotoDto>(ct);
+            return r?.PuedeVer == true;
+        }
+        catch (ApiException ex)
+        {
+            throw Traducir(ex);
+        }
+    }
+
     // Convierte el error de Agenda en un DomainException con el mismo mensaje que dio Agenda
     private static DomainException Traducir(ApiException ex)
     {

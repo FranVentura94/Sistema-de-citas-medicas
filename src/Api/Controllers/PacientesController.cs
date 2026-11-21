@@ -5,6 +5,7 @@ using BuildingBlocks.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using BuildingBlocks.Auditoria;
 
 namespace Api.Controllers;
 
@@ -32,6 +33,8 @@ public class PacientesController : ControllerBase
 
     // GET api/Pacientes/5
     [HttpGet("{id:long}")]
+
+    [Auditar("Consultó la ficha del paciente", "Paciente", "id")]
     public async Task<IActionResult> GetPaciente(long id, CancellationToken cancellationToken)
     {
         var paciente = await _mediator.Send(new GetPacienteByIdQuery(id), cancellationToken);

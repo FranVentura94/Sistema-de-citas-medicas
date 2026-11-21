@@ -9,10 +9,24 @@ export interface UsuarioInfo {
   permisos: string[];
 }
 
+// Si requiereCambioPassword = true, no hay token: la persona debe crear su contraseña primero
 export interface LoginResponse {
-  token: string;
-  expiraEn: string;
-  usuario: UsuarioInfo;
+  token: string | null;
+  expiraEn: string | null;
+  usuario: UsuarioInfo | null;
+  requiereCambioPassword: boolean;
+}
+
+// Datos de quien inició sesión, para saludarlo por su nombre
+export interface MiPerfil {
+  empleadoID: number;
+  nombres: string;
+  apellidos: string | null;
+  genero: 'F' | 'M' | null;
+  cargo: string;
+  fechaNacimiento: string | null;
+  fechaIngreso: string | null;
+  medicosAsignados: { medicoID: number; nombre: string }[];
 }
 
 // ===================== Directory =====================
@@ -167,6 +181,7 @@ export interface Atencion {
   notas: NotaMedica[];
   diagnosticos: AtencionDiagnostico[];
   prescripcion: Receta | null;
+  signosTomadosPor?: string | null;
 }
 
 export interface AtencionResumen {
@@ -206,3 +221,56 @@ export interface Medicamento {
   presentacion: string;
   concentracion: string;
 }
+
+// ===================== Triaje (preconsulta de enfermería) =====================
+export interface Triaje {
+  triajeId: number;
+  citaId: number;
+  pacienteId: number;
+  pacienteNombre: string;
+  medicoId: number;
+  medicoNombre: string;
+  signos: SignosVitales;
+  notas: string | null;
+  registradoPorNombre: string;
+  registradoPorRol: string;
+  fechaRegistro: string;
+}
+
+// ===================== Agendas compartidas =====================
+export interface AccesoAgenda {
+  accesoAgendaId: number;
+  medicoPropietarioId: number;
+  medicoPropietarioNombre: string;
+  medicoAutorizadoId: number;
+  medicoAutorizadoNombre: string;
+  alcance: 'TODA' | 'PACIENTES';
+  fechaVencimiento: string | null;
+  motivo: string | null;
+  estado: 'VIGENTE' | 'VENCIDO' | 'REVOCADO';
+  fechaCreacion: string;
+  fechaRevocacion: string | null;
+  pacientes: { pacienteId: number; pacienteNombre: string }[];
+}
+
+// Agendas que puede ver/gestionar quien inició sesión (lista vacía = todas)
+export interface MedicoPermitido {
+  medicoId: number;
+  propio: boolean;
+  agendaCompleta: boolean;
+  pacienteIds: number[];
+}
+
+export interface HorarioMedico {
+  horarioMedicoId: number;
+  medicoId: number;
+  medicoNombre: string;
+  consultorioId: number;
+  consultorioNombre: string;
+  diaSemana: number;
+  diaNombre: string;
+  horaInicio: string;
+  horaFin: string;
+  duracionCitaMinutos: number;
+}
+

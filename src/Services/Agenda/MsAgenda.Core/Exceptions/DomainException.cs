@@ -22,4 +22,5 @@ public static class Errores
     public const string TRANSICION_INVALIDA = "TRANSICION_INVALIDA";
     public const string SERVICIO_NO_DISPONIBLE = "SERVICIO_NO_DISPONIBLE";
     public const string ERROR_SERVICIO_EXTERNO = "ERROR_SERVICIO_EXTERNO";
+    public const string SIN_PERMISO = "SIN_PERMISO";
 }

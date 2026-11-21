@@ -82,7 +82,8 @@ public record AtencionDto(
     SignosVitalesDto? SignosVitales,
     List<NotaDto> Notas,
     List<AtencionDiagnosticoDto> Diagnosticos,
-    PrescripcionDto? Prescripcion);
+    PrescripcionDto? Prescripcion,
+    string? SignosTomadosPor = null);
 
 public record AtencionResumenDto(
     long AtencionId,
@@ -122,3 +123,34 @@ public record CitaRemotaDto(
     string EstadoCodigo,
     string EstadoNombre,
     string? MotivoConsulta);
+
+// ---------- Triaje (preconsulta de enfermería) ----------
+public record TriajeRequest(
+    long CitaId,
+    int? PresionSistolica,
+    int? PresionDiastolica,
+    int? FrecuenciaCardiaca,
+    int? FrecuenciaRespiratoria,
+    decimal? Temperatura,
+    int? SaturacionOxigeno,
+    decimal? Peso,
+    decimal? Talla,
+    string? Notas);
+
+public record TriajeDto(
+    long TriajeId,
+    long CitaId,
+    long PacienteId,
+    string PacienteNombre,
+    int MedicoId,
+    string MedicoNombre,
+    SignosVitalesDto Signos,
+    string? Notas,
+    string RegistradoPorNombre,
+    string RegistradoPorRol,
+    DateTime FechaRegistro);
+
+// ---------- Datos que llegan de MS_Directory ----------
+public record PacienteRemotoDto(long PacienteID, string Nombres, string Apellidos);
+
+public record PuedeVerRemotoDto(bool PuedeVer, string Motivo);

@@ -13,6 +13,8 @@ public static class Extension
 
         services.AddScoped<IHorarioService, HorarioService>();
         services.AddScoped<ICitaService, CitaService>();
+        services.AddScoped<IPermisosAgenda, PermisosAgenda>();
+        services.AddScoped<IAccesoService, AccesoService>();
 
         return services;
     }

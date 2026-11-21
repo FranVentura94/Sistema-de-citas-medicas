@@ -8,8 +8,8 @@ namespace MsClinical.Core.Services;
 public interface IAtencionService
 {
     Task<AtencionDto> IniciarAsync(long citaId, UsuarioActual usuario, CancellationToken ct);
-    Task<AtencionDto> GetAsync(long atencionId, CancellationToken ct);
-    Task<AtencionDto> GetPorCitaAsync(long citaId, CancellationToken ct);
+    Task<AtencionDto> GetAsync(long atencionId, UsuarioActual usuario, CancellationToken ct);
+    Task<AtencionDto> GetPorCitaAsync(long citaId, UsuarioActual usuario, CancellationToken ct);
     Task<List<AtencionResumenDto>> GetMisAtencionesAsync(UsuarioActual usuario, DateOnly? fecha, CancellationToken ct);
     Task<AtencionDto> RegistrarSignosAsync(long atencionId, SignosVitalesRequest request, UsuarioActual usuario, CancellationToken ct);
     Task<AtencionDto> AgregarNotaAsync(long atencionId, NotaRequest request, UsuarioActual usuario, CancellationToken ct);
@@ -86,22 +86,54 @@ public class AtencionService : IAtencionService
             Estado = EstadosAtencion.EN_PROCESO
         };
 
+        // Si la enfermera ya hizo el triaje, los signos vitales llegan listos a la consulta
+        var triaje = await _repo.GetTriajePorCitaAsync(cita.CitaId, ct);
+        if (triaje is not null)
+        {
+            atencion.SignosTomadosPor = triaje.RegistradoPorNombre;
+            atencion.SignosVitales = new SignosVitales
+            {
+                PresionSistolica = triaje.PresionSistolica,
+                PresionDiastolica = triaje.PresionDiastolica,
+                FrecuenciaCardiaca = triaje.FrecuenciaCardiaca,
+                FrecuenciaRespiratoria = triaje.FrecuenciaRespiratoria,
+                Temperatura = triaje.Temperatura,
+                SaturacionOxigeno = triaje.SaturacionOxigeno,
+                Peso = triaje.Peso,
+                Talla = triaje.Talla,
+                FechaRegistro = triaje.FechaRegistro
+            };
+        }
+
         await _repo.AddAtencionAsync(atencion, ct);
-        return await GetAsync(atencion.AtencionId, ct);
+        return await LeerAsync(atencion.AtencionId, ct);
     }
 
-    public async Task<AtencionDto> GetAsync(long atencionId, CancellationToken ct)
+    public async Task<AtencionDto> GetAsync(long atencionId, UsuarioActual usuario, CancellationToken ct)
     {
         var atencion = await _repo.GetAtencionAsync(atencionId, ct)
             ?? throw new DomainException(Errores.NO_ENCONTRADO, $"No existe la atención {atencionId}.", 404);
+        await ValidarLecturaAsync(atencion, usuario, ct);
         return atencion.ToDto();
     }
 
-    public async Task<AtencionDto> GetPorCitaAsync(long citaId, CancellationToken ct)
+    public async Task<AtencionDto> GetPorCitaAsync(long citaId, UsuarioActual usuario, CancellationToken ct)
     {
         var atencion = await _repo.GetAtencionPorCitaAsync(citaId, ct)
             ?? throw new DomainException(Errores.NO_ENCONTRADO, $"La cita {citaId} todavía no tiene atención.", 404);
+        await ValidarLecturaAsync(atencion, usuario, ct);
         return atencion.ToDto();
+    }
+
+    private async Task<AtencionDto> LeerAsync(long atencionId, CancellationToken ct) =>
+        (await _repo.GetAtencionAsync(atencionId, ct))!.ToDto();
+
+    // Ver una atención: su médico, el administrador, o quien tenga acceso al historial del paciente (agenda compartida)
+    private async Task ValidarLecturaAsync(Atencion atencion, UsuarioActual usuario, CancellationToken ct)
+    {
+        if (usuario.EsAdministrador || usuario.MedicoId == atencion.MedicoId) return;
+        if (!await _agenda.PuedeVerPacienteAsync(atencion.PacienteId, ct))
+            throw new DomainException(Errores.SIN_PERMISO, "No tienes acceso a esta atención.", 403);
     }
 
     public async Task<List<AtencionResumenDto>> GetMisAtencionesAsync(UsuarioActual usuario, DateOnly? fecha, CancellationToken ct)

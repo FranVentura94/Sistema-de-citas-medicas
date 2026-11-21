@@ -12,4 +12,11 @@ public interface IMedicoRepository
     Task<Medico> AddAsync(Medico medico, CancellationToken cancellationToken);
 
     Task<List<Especialidad>> GetEspecialidadesAsync(CancellationToken cancellationToken);
+
+    // Género de cada médico según su ficha de empleado (para "Dr." / "Dra.")
+    Task<Dictionary<int, string?>> GetGenerosAsync(IEnumerable<int> medicoIds, CancellationToken cancellationToken);
+
+    // ---------- Administración ----------
+    Task<bool> ExisteEspecialidadAsync(string codigo, string nombre, CancellationToken cancellationToken);
+    Task AddEspecialidadAsync(Especialidad especialidad, CancellationToken cancellationToken);
 }

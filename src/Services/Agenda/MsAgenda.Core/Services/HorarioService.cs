@@ -12,6 +12,7 @@ public interface IHorarioService
     Task<List<HorarioDto>> GetHorariosAsync(int? medicoId, CancellationToken ct);
     Task<HorarioDto> CrearHorarioAsync(CrearHorarioRequest request, CancellationToken ct);
     Task<List<EspacioDisponibleDto>> GetDisponibilidadAsync(int medicoId, DateOnly fecha, CancellationToken ct);
+    Task EliminarHorarioAsync(int horarioId, CancellationToken ct);
 }
 
 public class HorarioService : IHorarioService
@@ -116,6 +117,15 @@ public class HorarioService : IHorarioService
         }
 
         return espacios;
+    }
+    // Quita un bloque de horario (las citas ya agendadas se conservan)
+    public async Task EliminarHorarioAsync(int horarioId, CancellationToken ct)
+    {
+        var horario = await _repo.GetHorarioAsync(horarioId, ct)
+            ?? throw new DomainException(Errores.NO_ENCONTRADO, "El horario no existe.", 404);
+
+        horario.Activo = false;
+        await _repo.GuardarCambiosAsync(ct);
     }
 
     private static HorarioDto ToDto(HorarioMedico h) => new(

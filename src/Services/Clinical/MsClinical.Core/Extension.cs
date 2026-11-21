@@ -13,6 +13,7 @@ public static class Extension
 
         services.AddScoped<IAtencionService, AtencionService>();
         services.AddScoped<IExpedienteService, ExpedienteService>();
+        services.AddScoped<ITriajeService, TriajeService>();
 
         return services;
     }

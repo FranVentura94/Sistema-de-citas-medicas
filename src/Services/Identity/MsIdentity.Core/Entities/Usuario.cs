@@ -8,6 +8,10 @@ public class Usuario
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
 
+    // Contraseña temporal: la persona debe cambiarla al entrar por primera vez
+    public bool DebeCambiarPassword { get; set; }
+    public DateTime? PasswordTemporalVence { get; set; }
+
     public int RolId { get; set; }
 
     // Si el usuario es médico, se enlaza con el MedicoID de MS_Directory

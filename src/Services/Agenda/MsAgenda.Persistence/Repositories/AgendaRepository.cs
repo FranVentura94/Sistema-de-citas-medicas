@@ -45,6 +45,10 @@ public class AgendaRepository : IAgendaRepository
         await _db.SaveChangesAsync(ct);
     }
 
+    public Task<HorarioMedico?> GetHorarioAsync(int horarioId, CancellationToken ct) =>
+    _db.HorariosMedicos.FirstOrDefaultAsync(h => h.HorarioMedicoId == horarioId && h.Activo, ct);
+
+
     // ---------- Citas ----------
     public Task<List<Cita>> GetCitasAsync(CitaFiltro filtro, CancellationToken ct)
     {
@@ -100,4 +104,63 @@ public class AgendaRepository : IAgendaRepository
         _db.Estados.OrderBy(e => e.Orden).ToListAsync(ct);
 
     public Task GuardarCambiosAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
+
+    // ---------- Agendas compartidas ----------
+    public Task<List<AccesoAgenda>> GetAccesosComoPropietarioAsync(int medicoId, CancellationToken ct) =>
+        _db.AccesosAgenda.AsNoTracking().Include(a => a.Pacientes)
+            .Where(a => a.MedicoPropietarioId == medicoId)
+            .OrderByDescending(a => a.Activo).ThenByDescending(a => a.FechaCreacion)
+            .ToListAsync(ct);
+
+    public Task<List<AccesoAgenda>> GetAccesosComoAutorizadoAsync(int medicoId, CancellationToken ct) =>
+        _db.AccesosAgenda.AsNoTracking().Include(a => a.Pacientes)
+            .Where(a => a.MedicoAutorizadoId == medicoId)
+            .OrderByDescending(a => a.Activo).ThenByDescending(a => a.FechaCreacion)
+            .ToListAsync(ct);
+
+    public Task<AccesoAgenda?> GetAccesoAsync(int accesoId, CancellationToken ct) =>
+        _db.AccesosAgenda.Include(a => a.Pacientes).FirstOrDefaultAsync(a => a.AccesoAgendaId == accesoId, ct);
+
+    public Task<AccesoAgenda?> GetAccesoActivoEntreAsync(int propietarioId, int autorizadoId, CancellationToken ct) =>
+        _db.AccesosAgenda.Include(a => a.Pacientes)
+            .Where(a => a.MedicoPropietarioId == propietarioId && a.MedicoAutorizadoId == autorizadoId && a.Activo
+                        && (a.FechaVencimiento == null || a.FechaVencimiento > DateTime.Now))
+            .OrderByDescending(a => a.FechaCreacion)
+            .FirstOrDefaultAsync(ct);
+
+    public async Task AddAccesoAsync(AccesoAgenda acceso, CancellationToken ct)
+    {
+        await _db.AccesosAgenda.AddAsync(acceso, ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public void QuitarPacientesDeAcceso(AccesoAgenda acceso)
+    {
+        foreach (var p in acceso.Pacientes.ToList())
+        {
+            acceso.Pacientes.Remove(p);
+            if (_db.Entry(p).State != EntityState.Detached) _db.AccesoPacientes.Remove(p);
+        }
+    }
+
+    public Task<bool> ExisteCitaAsync(IEnumerable<int> medicoIds, long pacienteId, CancellationToken ct)
+    {
+        var ids = medicoIds.ToList();
+        return _db.Citas.AnyAsync(c => c.PacienteId == pacienteId && ids.Contains(c.MedicoId), ct);
+    }
+
+    // Pacientes que tienen o tuvieron cita con el médico (los únicos que puede compartir)
+    public async Task<List<AccesoPacienteDto>> GetPacientesDeMedicoAsync(int medicoId, CancellationToken ct)
+    {
+        var filas = await _db.Citas.AsNoTracking()
+            .Where(c => c.MedicoId == medicoId)
+            .Select(c => new { c.PacienteId, c.PacienteNombre })
+            .Distinct()
+            .ToListAsync(ct);
+        return filas
+            .GroupBy(f => f.PacienteId)
+            .Select(g => new AccesoPacienteDto(g.Key, g.First().PacienteNombre))
+            .OrderBy(p => p.PacienteNombre)
+            .ToList();
+    }
 }

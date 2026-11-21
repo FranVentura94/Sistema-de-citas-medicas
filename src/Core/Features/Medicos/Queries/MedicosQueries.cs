@@ -20,7 +20,8 @@ public class GetMedicosQueryHandler : IRequestHandler<GetMedicosQuery, List<Medi
     public async Task<List<MedicoDto>> Handle(GetMedicosQuery request, CancellationToken cancellationToken)
     {
         var medicos = await _repository.GetAllAsync(request.EspecialidadId, cancellationToken);
-        return medicos.Select(m => m.ToDto()).ToList();
+        var generos = await _repository.GetGenerosAsync(medicos.Select(m => m.MedicoID), cancellationToken);
+        return medicos.Select(m => m.ToDto(generos.GetValueOrDefault(m.MedicoID))).ToList();
     }
 }
 
@@ -42,7 +43,8 @@ public class GetMedicoByIdQueryHandler : IRequestHandler<GetMedicoByIdQuery, Med
             ?? throw new DomainException(Errores.RECURSO_NO_ENCONTRADO,
                 $"No existe el médico {request.MedicoID}.");
 
-        return medico.ToDto();
+        var generos = await _repository.GetGenerosAsync(new[] { medico.MedicoID }, cancellationToken);
+        return medico.ToDto(generos.GetValueOrDefault(medico.MedicoID));
     }
 }
 

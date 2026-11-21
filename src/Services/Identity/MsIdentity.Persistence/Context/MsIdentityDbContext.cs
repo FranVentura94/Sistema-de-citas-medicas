@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MsIdentity.Core.Entities;
+using BuildingBlocks.Auditoria;
 
 namespace MsIdentity.Persistence.Context;
 
@@ -17,6 +18,9 @@ public class MsIdentityDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Tabla de auditoría (quién hizo qué y cuándo)
+        modelBuilder.AgregarAuditoria();
 
         // ---------- Usuarios ----------
         modelBuilder.Entity<Usuario>(e =>

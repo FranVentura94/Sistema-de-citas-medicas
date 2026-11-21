@@ -23,19 +23,34 @@ export class AuthService {
   readonly usuario = computed(() => this.sesion()?.usuario ?? null);
   readonly token = computed(() => this.sesion()?.token ?? null);
 
+  // Si la persona entra con una contraseña temporal, NO se guarda sesión:
+  // la respuesta trae requiereCambioPassword = true y debe crear su contraseña
   login(nombreUsuario: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${API_URL}/Auth/login`, { nombreUsuario, password }).pipe(
-      tap(r => {
-        const sesion: Sesion = { token: r.token, expiraEn: r.expiraEn, usuario: r.usuario };
-        localStorage.setItem(CLAVE_SESION, JSON.stringify(sesion));
-        this.sesion.set(sesion);
-      })
+      tap(r => this.guardarSesion(r))
     );
   }
 
+  // Primer ingreso: cambia la temporal por su contraseña definitiva y entra
+  primerIngreso(nombreUsuario: string, passwordTemporal: string, nuevaPassword: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${API_URL}/Auth/primer-ingreso`, { nombreUsuario, passwordTemporal, nuevaPassword }).pipe(
+      tap(r => this.guardarSesion(r))
+    );
+  }
+
+  private guardarSesion(r: LoginResponse): void {
+    if (!r.token || !r.expiraEn || !r.usuario) return;
+    const sesion: Sesion = { token: r.token, expiraEn: r.expiraEn, usuario: r.usuario };
+    localStorage.setItem(CLAVE_SESION, JSON.stringify(sesion));
+    this.sesion.set(sesion);
+  }
+
   logout(expirada = false): void {
-    localStorage.removeItem(CLAVE_SESION);
-    this.sesion.set(null);
+    // Deja constancia en la auditoría (solo si la sesión todavía es válida)
+    if (!expirada && this.token()) {
+      this.http.post(`${API_URL}/Auth/logout`, {}).subscribe({ error: () => { } });
+    }
+    localStorage.removeItem(CLAVE_SESION); this.sesion.set(null);
     this.router.navigate(['/login'], expirada ? { queryParams: { expirada: 1 } } : {});
   }
 
